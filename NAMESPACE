@@ -1,0 +1,16 @@
+useDynLib(SimReg)
+exportPattern("^[[:alpha:]]+")
+importFrom(Rcpp, evalCpp)
+import(dplyr)
+importFrom(parallel, mclapply)
+import(hpoPlot)
+import(reshape2)
+import(ggplot2)
+import(gridExtra)
+importFrom(plotrix, color.legend)
+importFrom("grDevices", "colorRampPalette", "dev.off", "pdf", "rgb")
+importFrom("graphics", "axis", "curve", "hist", "image", "layout",
+ "legend", "par", "plot", "plot.new", "text")
+importFrom("stats", "dnorm", "pbeta", "qnorm", "rnorm", "runif", "sd",
+ "setNames")
+importFrom("utils", "combn")
