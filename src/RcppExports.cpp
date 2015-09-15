@@ -209,13 +209,16 @@ RcppExport SEXP R_sim_reg(
 	SEXP R_log_alpha_plus_beta_g_proposal_sd,
 	SEXP R_phi_jumps,
 
-	SEXP R_baseline_term_sims,
+	SEXP R_lit_term_sims,
 	SEXP R_row_is_column_anc,
 	SEXP R_phi_num_leaves_geometric_rate,
 	SEXP R_fix_phi,
-	SEXP R_reparameterise,
-	SEXP R_quantile_normalise,
-	SEXP R_joint_proposal
+	SEXP R_joint_proposal,
+	SEXP R_H,
+	SEXP R_target_range,
+	SEXP R_adapt_block_size,
+	SEXP R_max_tuning_batches,
+	SEXP R_repeats
 ) {
 BEGIN_RCPP
 	NumericVector gamma_prior_prob = as<NumericVector>(R_gamma_prior_prob);
@@ -238,11 +241,11 @@ BEGIN_RCPP
 	term_list h(term_ids, case_ids, y.length());
 
 	LogicalMatrix row_is_column_anc(R_row_is_column_anc);
-	NumericVector baseline_term_sims(R_baseline_term_sims);
+	NumericVector lit_term_sims(R_lit_term_sims);
 
 	geom_known_prior phi_lik_func(
 		row_is_column_anc,
-		baseline_term_sims,
+		lit_term_sims,
 		as<double>(R_phi_num_leaves_geometric_rate)
 	);
 
@@ -296,57 +299,41 @@ BEGIN_RCPP
 
 	int phi_size = phi.length();
 
-	State cur_state;
-	cur_state.gamma = gamma;
-	cur_state.alpha_star = alpha_star;
-	cur_state.alpha = alpha;
-	cur_state.log_beta = log_beta;
-	cur_state.phi = phi;
-	cur_state.logit_mean_f = logit_mean_f;
-	cur_state.log_alpha_plus_beta_f = log_alpha_plus_beta_f;
-	cur_state.logit_mean_g = logit_mean_g;
-	cur_state.log_alpha_plus_beta_g = log_alpha_plus_beta_g;
-
-	vector<Likelihood> likelihoods;
-	
-	for (int i = 0; i < gamma_prior_prob.length(); i++) {
-		likelihoods.push_back(
-			Likelihood(
-				gamma_prior_prob[i],
-				alpha_star_mean,
-				alpha_mean,
-				alpha_star_sd,
-				alpha_sd,
-				log_beta_mean,
-				log_beta_sd,
-				logit_mean_f_mean,
-				logit_mean_f_sd,
-				log_alpha_plus_beta_f_mean,
-				log_alpha_plus_beta_f_sd,
-				logit_mean_g_mean,
-				logit_mean_g_sd,
-				log_alpha_plus_beta_g_mean,
-				log_alpha_plus_beta_g_sd,
-				pseudo_alpha_star_mean,
-				pseudo_alpha_mean,
-				pseudo_alpha_star_sd,
-				pseudo_alpha_sd,
-				pseudo_log_beta_mean,
-				pseudo_log_beta_sd,
-				pseudo_logit_mean_f_mean,
-				pseudo_logit_mean_f_sd,
-				pseudo_log_alpha_plus_beta_f_mean,
-				pseudo_log_alpha_plus_beta_f_sd,
-				pseudo_logit_mean_g_mean,
-				pseudo_logit_mean_g_sd,
-				pseudo_log_alpha_plus_beta_g_mean,
-				pseudo_log_alpha_plus_beta_g_sd,
-				phi_lik_func,
-				pseudo_phi_marginal_prior,
-				row_is_column_anc.ncol()
-			)
-		);
-	}
+	Likelihood likelihood(
+		gamma_prior_prob[0],
+		alpha_star_mean,
+		alpha_mean,
+		alpha_star_sd,
+		alpha_sd,
+		log_beta_mean,
+		log_beta_sd,
+		logit_mean_f_mean,
+		logit_mean_f_sd,
+		log_alpha_plus_beta_f_mean,
+		log_alpha_plus_beta_f_sd,
+		logit_mean_g_mean,
+		logit_mean_g_sd,
+		log_alpha_plus_beta_g_mean,
+		log_alpha_plus_beta_g_sd,
+		pseudo_alpha_star_mean,
+		pseudo_alpha_mean,
+		pseudo_alpha_star_sd,
+		pseudo_alpha_sd,
+		pseudo_log_beta_mean,
+		pseudo_log_beta_sd,
+		pseudo_logit_mean_f_mean,
+		pseudo_logit_mean_f_sd,
+		pseudo_log_alpha_plus_beta_f_mean,
+		pseudo_log_alpha_plus_beta_f_sd,
+		pseudo_logit_mean_g_mean,
+		pseudo_logit_mean_g_sd,
+		pseudo_log_alpha_plus_beta_g_mean,
+		pseudo_log_alpha_plus_beta_g_sd,
+		phi_lik_func,
+		pseudo_phi_marginal_prior,
+		row_is_column_anc.ncol(),
+		as<double>(R_H)
+	);
 
 	Update update;
 
@@ -367,10 +354,65 @@ BEGIN_RCPP
 
 	Data d(y, h, g);
 
-	List result;
+	State cur_state;
+	cur_state.gamma = gamma;
+	cur_state.alpha_star = alpha_star;
+	cur_state.alpha = alpha;
+	cur_state.log_beta = log_beta;
+	cur_state.phi = phi;
+	cur_state.logit_mean_f = logit_mean_f;
+	cur_state.log_alpha_plus_beta_f = log_alpha_plus_beta_f;
+	cur_state.logit_mean_g = logit_mean_g;
+	cur_state.log_alpha_plus_beta_g = log_alpha_plus_beta_g;
 
-	result = Chain(
-		likelihoods[0],
+	cur_state.initialise(
+		likelihood,
+		d,
+		row_is_column_anc,
+		ttsm
+	);
+
+	NumericVector target_range(R_target_range);
+	int adapt_block_size = as<int>(R_adapt_block_size);
+	int max_tuning_batches = as<int>(R_max_tuning_batches);
+	int repeats = as<int>(R_repeats);
+
+	int batch_number = 0;
+	double adaption_rate = 4;
+
+	if (max_tuning_batches > 0) {
+		double batch_mpg = 0.0;
+		do {
+			batch_mpg = 0.0;
+			for (int adapting_it = 0; adapting_it < adapt_block_size; adapting_it++) {
+				update.update(
+					cur_state,
+					likelihood,
+					1.0,
+					d,
+					row_is_column_anc,
+					ttsm,
+					fix_phi,
+					true,
+					false
+				);
+				if (cur_state.gamma) batch_mpg += (double)1/(double)adapt_block_size;
+			}
+
+			if (batch_mpg < target_range[0]) {
+				likelihood.H += adaption_rate/sqrt(1.0 + (double)batch_number);
+			} 
+			if (batch_mpg > target_range[1]) {
+				likelihood.H -= adaption_rate/sqrt(1.0 + (double)batch_number);
+			}
+
+			batch_number++;
+		}
+		while ((batch_mpg < target_range[0] || batch_mpg > target_range[1]) && batch_number <= max_tuning_batches);
+	}
+
+	List result = Chain(
+		likelihood,
 		update,
 		d, 
 		row_is_column_anc, 
@@ -382,14 +424,11 @@ BEGIN_RCPP
 		1.0,
 		record_x,
 		fix_phi,
-		as<bool>(R_reparameterise),
-		as<bool>(R_quantile_normalise)
+		true,
+		false	
 	);
 
 	return result;
 
 END_RCPP
 }
-
-
-

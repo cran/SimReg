@@ -4,12 +4,16 @@
 \alias{get.term.term.matrix}
 \title{Get term-term similarity matrix based on Lin's definition}
 \usage{
-get.term.term.matrix(hpo.terms, information.content, prune = FALSE)
+get.term.term.matrix(hpo.terms, information.content,
+  term.descendancy.matrix = get.term.descendancy.matrix(hpo.terms,
+  names(information.content)), prune = FALSE)
 }
 \arguments{
 \item{hpo.terms}{R-Object representation of HPO}
 
 \item{information.content}{Numeric vector of information contents of terms}
+
+\item{term.descendancy.matrix}{Logical term descendancy matrix, dimensions symmetrically labelled by terms, and where by a cell value of TRUE indicates that the row is the ancestor of the column term (in the sense of the DAG structure of the HPO}
 
 \item{prune}{Logical indicating whether to make similarity of more specific terms 0 in one direction}
 }

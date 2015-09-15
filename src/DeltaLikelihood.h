@@ -17,9 +17,9 @@ public:
 	geom_known_prior(Rcpp::LogicalMatrix, Rcpp::NumericVector, double);
 	double operator()(Rcpp::IntegerVector);
 	Rcpp::LogicalMatrix row_is_column_anc;
-	Rcpp::NumericVector baseline_to_term_similarities;
+	Rcpp::NumericVector lit_to_term_similarities;
 	double rate;
-	double mean_baseline_sim;
+	double mean_lit_sim;
 };
 
 double get_log_leaf_set_representations(

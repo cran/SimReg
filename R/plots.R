@@ -63,7 +63,7 @@ leaf.term.pair.marginal.matrix <- function(
 #' @return Plots graph
 hpo.plot.marginal.freqs <- function(
 	hpo.terms, 
-	term.descendancy.matrix,
+	term.descendancy.matrix=get.term.descendancy.matrix(hpo.terms, unique(as.character(phi.trace))),
 	phi.trace,
 	max.terms=20,
 	colour.gradient=TRUE,
@@ -335,7 +335,7 @@ sim.reg.summary <- function(hpo.terms, term.descendancy.matrix, file.name, sim.r
 #' @param file.name File to write plots to 
 #' @param sim.reg.out Output of call to \code{sim.reg}
 #' @return Plots graph to file
-sim.reg.full.summary <- function(hpo.terms, term.descendancy.matrix, file.name, sim.reg.out) {
+sim.reg.full.summary <- function(hpo.terms, term.descendancy.matrix=get.term.descendancy.matrix(hpo.terms, unique(as.character(sim.reg.out$phi))), file.name, sim.reg.out) {
 	x <- 1
 	colour.points <- function(x) ifelse(x$gamma, "red", "black")
 

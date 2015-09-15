@@ -45,7 +45,8 @@ public:
 		double in_pseudo_log_alpha_plus_beta_g_sd,
 		geom_known_prior& in_phi_lik_func,
 		IntegerVector in_pseudo_phi_marginal_prior,
-		int total_terms
+		int total_terms,
+		double in_H = 0.0
 	);
 
 	double gamma_prior_prob;
@@ -80,6 +81,7 @@ public:
 	geom_known_prior phi_lik_func;
 	IntegerVector pseudo_phi_marginal_prior_each;
 	IntegerVector pseudo_phi_marginal_prior;
+	double H;
 
 	double get_gamma_lik(bool gamma);
 	double get_alpha_star_lik(double alpha_star, bool gamma);

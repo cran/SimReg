@@ -103,13 +103,16 @@ RcppExport SEXP R_sim_reg(
 	SEXP R_log_alpha_plus_beta_g_proposal_sd,
 	SEXP R_phi_jumps,
 
-	SEXP R_baseline_term_sims,
+	SEXP R_lit_term_sims,
 	SEXP R_row_is_column_anc,
 	SEXP R_phi_num_leaves_geometric_rate,
 	SEXP R_fix_phi,
-	SEXP R_reparameterise,
-	SEXP R_quantile_normalise,
-	SEXP R_joint_proposal
+	SEXP R_joint_proposal,
+	SEXP R_H,
+	SEXP R_target_range,
+	SEXP R_adapt_block_size,
+	SEXP R_max_tuning_batches,
+	SEXP R_repeats
 );
 
 #endif

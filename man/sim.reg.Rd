@@ -12,7 +12,7 @@ sim.reg(hpo.terms, y, x = NULL, g = rep(0, length(y)), its = 10000,
   names(information.content)), case_ids = unlist(mapply(SIMPLIFY = FALSE, FUN
   = rep, 0:(length(x) - 1), sapply(x, length))),
   term_ids = as.integer(match(unlist(x), colnames(row_is_column_anc))) - 1,
-  return_pseudo_runs = FALSE, tuning_its = 10000, tuning_burn = 1000,
+  return_tuning_runs = FALSE, tuning_its = 10000, tuning_burn = 1000,
   burn = 2000, gamma = (runif(1) < gamma_prior_prob), alpha_star = rnorm(n
   = 1, mean = alpha_star_mean, sd = alpha_star_sd), alpha = rnorm(n = 1, mean
   = alpha_mean, sd = alpha_sd), log_beta = rnorm(n = 1, mean = log_beta_mean,
@@ -36,7 +36,8 @@ sim.reg(hpo.terms, y, x = NULL, g = rep(0, length(y)), its = 10000,
   get.ancestors, hpo.terms = hpo.terms)), colnames(row_is_column_anc)) - 1,
   50)), pseudo_phi_marginal_prior = c(0:(ncol(row_is_column_anc) - 1),
   rep(match(unlist(lapply(x[y], get.ancestors, hpo.terms = hpo.terms)),
-  colnames(row_is_column_anc)) - 1, 50)), phi_num_leaves_geometric_rate = 1)
+  colnames(row_is_column_anc)) - 1, 50)), phi_num_leaves_geometric_rate = 1,
+  lit_sims = setNames(rep(1, ncol(row_is_column_anc)), colnames(ttsm)))
 }
 \arguments{
 \item{hpo.terms}{R-Object representation of HPO}
@@ -63,7 +64,7 @@ sim.reg(hpo.terms, y, x = NULL, g = rep(0, length(y)), its = 10000,
 
 \item{term_ids}{Vector of HPO term IDs belonging to cases}
 
-\item{return_pseudo_runs}{Logical indicating whether to return the MCMC output of the tuning phase of the inference procedure}
+\item{return_tuning_runs}{Logical indicating whether to return the MCMC output of the tuning phase of the inference procedure}
 
 \item{tuning_its}{Number of update cycles to perform in the tuning phase of the inference procedure}
 
@@ -138,6 +139,8 @@ sim.reg(hpo.terms, y, x = NULL, g = rep(0, length(y)), its = 10000,
 \item{pseudo_phi_marginal_prior}{Vector of HPO term IDs to be used as prior distribution on marginal probability of single term in phi given gamma = 0}
 
 \item{phi_num_leaves_geometric_rate}{Geometric parameter for truncated geometric distribution on number of leaf terms in phi}
+
+\item{lit_sims}{Numeric vector of similarities (greater than 0) of literature phenotype to individual terms (named by term ID)}
 }
 \value{
 List (by parameter) of vectors of consecutive parameter samples from MCMC inference.

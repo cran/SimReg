@@ -2,29 +2,34 @@
 #'
 #' @template hpo.terms
 #' @template information.content 
+#' @template term.descendancy.matrix
 #' @param prune Logical indicating whether to make similarity of more specific terms 0 in one direction
 #' @return Numeric matrix of term-term similarities
 #' @references Lin, D. (1989). An Information-Theoretic Definition of Similarity.
 #' @export
-get.term.term.matrix <- function(hpo.terms, information.content, prune=FALSE) sapply(
-	setNames(nm=names(information.content)),
-	function(term1) sapply(
-		setNames(nm=names(information.content)),
-		function(term2) (2 * max(information.content[intersect(hpo.terms$ancestors[[term1]], hpo.terms$ancestors[[term2]])])/(information.content[term1] + information.content[term2])) 
-	)
-) %>%
-(function(x) {
-	rownames(x) <- colnames(x) 
-	x[which(arr.ind=TRUE, is.na(x))] <- 0
-	x
-}) %>%
-(function(ttsm.mat) {
-	if (!prune) return(ttsm.mat)
-	result <- ttsm.mat
-	for (term in rownames(ttsm.mat)) 
-		result[term, ] <- ifelse(colnames(ttsm.mat) %in% hpo.terms$ancestors[[term]], result[term,], 0)
-	result
-})
+get.term.term.matrix <- function(hpo.terms, information.content, term.descendancy.matrix=get.term.descendancy.matrix(hpo.terms, names(information.content)), prune=FALSE) {
+	result <- matrix(0, nrow=length(information.content), ncol=length(information.content), dimnames=rep(times=2, list(names(information.content))))
+
+	for (term in names(information.content)) {
+		descs <- c(match(term, names(information.content)), which(term.descendancy.matrix[term,]))
+		result[descs,descs] <- pmax(matrix(information.content[term], nrow=length(descs), ncol=length(descs)), result[descs,descs])
+	}
+
+	ic.sum <- outer(information.content, information.content, "+")
+
+	result <- 2 * result / ic.sum
+
+	result[which(arr.ind=TRUE, is.na(result))] <- 0
+
+	result %>%
+	(function(ttsm.mat) {
+		if (!prune) return(ttsm.mat)
+		result <- ttsm.mat
+		for (term in rownames(ttsm.mat)) 
+			result[term, ] <- ifelse(colnames(ttsm.mat) %in% hpo.terms$ancestors[[term]], result[term,], 0)
+		result
+	})
+}
 
 #' Get leaf matrix
 #'

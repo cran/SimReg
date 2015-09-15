@@ -55,7 +55,6 @@ List Chain(
 	NumericVector logit_mean_g_lik_trace(recorded_iterations);
 	NumericVector log_alpha_plus_beta_g_lik_trace(recorded_iterations);
 	NumericVector y_lik_trace(recorded_iterations);
-	NumericVector alt_lik_trace(recorded_iterations);
 
 	for (int i = 0; i < iterations; i++) {
 		updater.update(
@@ -85,39 +84,23 @@ List Chain(
 				phi_trace(recording_it, j) = cur_state.phi[j];
 
 			if (record_x) {
-				pair<NumericVector, NumericVector> s_temp = get_each_way_sim(
-					row_is_column_anc,
-					ttsm,
-					cur_state.phi,
-					d.h, quantile_normalise
-				);
-
-				NumericVector x_temp = transform_each_way_sim(
-					s_temp,
-					cur_state.logit_mean_f,
-					cur_state.log_alpha_plus_beta_f,
-					cur_state.logit_mean_g,
-					cur_state.log_alpha_plus_beta_g,
-					reparameterise
-				);
-
 				for (int j = 0; j < d.h.num_cases; j++) {
-					x_trace(recording_it, j) = x_temp[j];
-					s_phi_trace(recording_it, j) = s_temp.first[j];
-					s_h_trace(recording_it, j) = s_temp.second[j];
+					x_trace(recording_it, j) = cur_state._x[j];
+					s_phi_trace(recording_it, j) = cur_state._s.first[j];
+					s_h_trace(recording_it, j) = cur_state._s.second[j];
 				}
 			}
 
-			gamma_lik_trace[recording_it] = cur_state.get_gamma_lik(likelihood, temperature);
-			alpha_star_lik_trace[recording_it] = cur_state.get_alpha_star_lik(likelihood, temperature);
-			alpha_lik_trace[recording_it] = cur_state.get_alpha_lik(likelihood, temperature);
-			log_beta_lik_trace[recording_it] = cur_state.get_log_beta_lik(likelihood, temperature);
-			phi_lik_trace[recording_it] = cur_state.get_phi_lik(likelihood, temperature);
-			logit_mean_f_lik_trace[recording_it] = cur_state.get_logit_mean_f_lik(likelihood, temperature);
-			log_alpha_plus_beta_f_lik_trace[recording_it] = cur_state.get_log_alpha_plus_beta_f_lik(likelihood, temperature);
-			logit_mean_g_lik_trace[recording_it] = cur_state.get_logit_mean_g_lik(likelihood, temperature);
-			log_alpha_plus_beta_g_lik_trace[recording_it] = cur_state.get_log_alpha_plus_beta_g_lik(likelihood, temperature);
-			y_lik_trace[recording_it] = cur_state.get_y_lik(likelihood, ttsm, row_is_column_anc, d, temperature, reparameterise, quantile_normalise);
+			gamma_lik_trace[recording_it] = cur_state.cur_gamma_lik;
+			alpha_star_lik_trace[recording_it] = cur_state.cur_alpha_star_lik;
+			alpha_lik_trace[recording_it] = cur_state.cur_alpha_lik;
+			log_beta_lik_trace[recording_it] = cur_state.cur_log_beta_lik;
+			phi_lik_trace[recording_it] = cur_state.cur_phi_lik;
+			logit_mean_f_lik_trace[recording_it] = cur_state.cur_logit_mean_f_lik;
+			log_alpha_plus_beta_f_lik_trace[recording_it] = cur_state.cur_log_alpha_plus_beta_f_lik;
+			logit_mean_g_lik_trace[recording_it] = cur_state.cur_logit_mean_g_lik;
+			log_alpha_plus_beta_g_lik_trace[recording_it] = cur_state.cur_log_alpha_plus_beta_g_lik;
+			y_lik_trace[recording_it] = cur_state.cur_y_lik;
 		}
 			
 	}
@@ -153,7 +136,7 @@ List Chain(
 		Named("phi_lik") = phi_lik_trace,
 		Named("logit_mean_f_lik") = logit_mean_f_lik_trace,
 		Named("y_lik") = y_lik_trace,
-		Named("alt_lik") = alt_lik_trace
+		Named("H") = likelihood.H
 	);
 
 }

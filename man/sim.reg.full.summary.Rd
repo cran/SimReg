@@ -4,7 +4,9 @@
 \alias{sim.reg.full.summary}
 \title{Create grid of SimReg output plots}
 \usage{
-sim.reg.full.summary(hpo.terms, term.descendancy.matrix, file.name, sim.reg.out)
+sim.reg.full.summary(hpo.terms,
+  term.descendancy.matrix = get.term.descendancy.matrix(hpo.terms,
+  unique(as.character(sim.reg.out$phi))), file.name, sim.reg.out)
 }
 \arguments{
 \item{hpo.terms}{R-Object representation of HPO}

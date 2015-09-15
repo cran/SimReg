@@ -35,7 +35,8 @@ Likelihood::Likelihood(
 	double in_pseudo_log_alpha_plus_beta_g_sd,
 	geom_known_prior& in_phi_lik_func,
 	IntegerVector in_pseudo_phi_marginal_prior,
-	int total_terms
+	int total_terms,
+	double in_H
 ) : phi_lik_func(in_phi_lik_func) {
 	gamma_prior_prob = in_gamma_prior_prob;
 	alpha_star_mean = in_alpha_star_mean;
@@ -74,11 +75,11 @@ Likelihood::Likelihood(
 		_temp[pseudo_phi_marginal_prior[i]]++;
 	pseudo_phi_marginal_prior_each = _temp;
 	
-
+	H = in_H;
 }
 
 double Likelihood::get_gamma_lik(bool gamma) {
-	return log(gamma ? gamma_prior_prob : (1.0-gamma_prior_prob));		
+	return gamma ? (H + log(gamma_prior_prob)) : (-H + log(1.0-gamma_prior_prob));		
 }
 
 double Likelihood::get_alpha_star_lik(double val, bool gamma) {

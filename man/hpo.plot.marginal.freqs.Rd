@@ -4,9 +4,11 @@
 \alias{hpo.plot.marginal.freqs}
 \title{Plot marginal frequency of terms}
 \usage{
-hpo.plot.marginal.freqs(hpo.terms, term.descendancy.matrix, phi.trace,
-  max.terms = 20, colour.gradient = TRUE, size.gradient = TRUE,
-  custom.labels = c(), show.proportion = TRUE, colours = NULL, ...)
+hpo.plot.marginal.freqs(hpo.terms,
+  term.descendancy.matrix = get.term.descendancy.matrix(hpo.terms,
+  unique(as.character(phi.trace))), phi.trace, max.terms = 20,
+  colour.gradient = TRUE, size.gradient = TRUE, custom.labels = c(),
+  show.proportion = TRUE, colours = NULL, ...)
 }
 \arguments{
 \item{hpo.terms}{R-Object representation of HPO}

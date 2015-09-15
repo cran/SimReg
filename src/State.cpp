@@ -11,16 +11,37 @@ Data::Data(LogicalVector in_y, term_list in_h, NumericVector in_g) : h(in_h) {
 
 double State::get_total_lik(LogicalMatrix row_is_column_anc, NumericMatrix ttsm, Likelihood& lik, Data& d, double temperature, bool reparameterise, bool quantile_normalise) {
 	return
-		get_gamma_lik(lik, temperature) + 
-		get_alpha_star_lik(lik, temperature) + 
-		get_alpha_lik(lik, temperature) + 
-		get_log_beta_lik(lik, temperature) + 
-		get_phi_lik(lik, temperature) + 
-		get_logit_mean_f_lik(lik, temperature) + 
-		get_log_alpha_plus_beta_f_lik(lik, temperature) + 
-		get_logit_mean_g_lik(lik, temperature) + 
-		get_log_alpha_plus_beta_g_lik(lik, temperature) + 
-		get_y_lik(lik, ttsm, row_is_column_anc, d, temperature, reparameterise, quantile_normalise);
+		cur_gamma_lik +
+		cur_alpha_star_lik +
+		cur_alpha_lik +
+		cur_log_beta_lik +
+		cur_logit_mean_f_lik +
+		cur_log_alpha_plus_beta_f_lik +
+		cur_logit_mean_g_lik +
+		cur_log_alpha_plus_beta_g_lik +
+		cur_phi_lik +
+		cur_y_lik
+	;
+}
+
+void State::initialise(
+	Likelihood& likelihood,
+	Data& d,
+	LogicalMatrix row_is_column_anc,
+	NumericMatrix ttsm
+) {
+	cur_gamma_lik = get_gamma_lik(likelihood, 1.0);
+	cur_alpha_star_lik = get_alpha_star_lik(likelihood, 1.0);
+	cur_alpha_lik = get_alpha_lik(likelihood, 1.0);
+	cur_log_beta_lik = get_log_beta_lik(likelihood, 1.0);
+	cur_logit_mean_f_lik = get_logit_mean_f_lik(likelihood, 1.0);
+	cur_log_alpha_plus_beta_f_lik = get_log_alpha_plus_beta_f_lik(likelihood, 1.0);
+	cur_logit_mean_g_lik = get_logit_mean_g_lik(likelihood, 1.0);
+	cur_log_alpha_plus_beta_g_lik = get_log_alpha_plus_beta_g_lik(likelihood, 1.0);
+	cur_phi_lik = get_phi_lik(likelihood, 1.0);
+	cur_y_lik = get_y_lik(likelihood, ttsm, row_is_column_anc, d, 1.0, true, false);
+	_s = get_s(ttsm, row_is_column_anc, d);
+	_x = get_x(ttsm, row_is_column_anc, d);
 }
 
 void State::set_random(
@@ -42,6 +63,8 @@ void State::set_random(
 	log_alpha_plus_beta_f = norm_rand() * likelihood.log_alpha_plus_beta_f_sd + likelihood.log_alpha_plus_beta_f_mean;
 	logit_mean_g = norm_rand() * likelihood.logit_mean_g_sd + likelihood.logit_mean_g_mean;
 	log_alpha_plus_beta_g = norm_rand() * likelihood.log_alpha_plus_beta_g_sd + likelihood.log_alpha_plus_beta_g_mean;
+
+	initialise(likelihood, d, row_is_column_anc, ttsm);
 }
 
 State State::random(
@@ -64,10 +87,12 @@ State State::random(
 	s.log_alpha_plus_beta_f = norm_rand() * likelihood.log_alpha_plus_beta_f_sd + likelihood.log_alpha_plus_beta_f_mean;
 	s.logit_mean_g = norm_rand() * likelihood.logit_mean_g_sd + likelihood.logit_mean_g_mean;
 	s.log_alpha_plus_beta_g = norm_rand() * likelihood.log_alpha_plus_beta_g_sd + likelihood.log_alpha_plus_beta_g_mean;
+
+	s.initialise(likelihood, d, row_is_column_anc, ttsm);
 	return s;
 }
 
-NumericVector State::get_x(NumericMatrix ttsm, LogicalMatrix row_is_column_anc, Data& d, bool reparameterise, bool quantile_normalise) {
+pair<NumericVector, NumericVector> State::get_s(NumericMatrix ttsm, LogicalMatrix row_is_column_anc, Data& d, bool reparameterise, bool quantile_normalise) {
 	pair<NumericVector, NumericVector> s = get_each_way_sim(
 		row_is_column_anc,
 		ttsm,
@@ -75,15 +100,19 @@ NumericVector State::get_x(NumericMatrix ttsm, LogicalMatrix row_is_column_anc, 
 		d.h,
 		quantile_normalise
 	);
+	return s;
+}
 
-	return transform_each_way_sim(
-		s,
+NumericVector State::get_x(NumericMatrix ttsm, LogicalMatrix row_is_column_anc, Data& d, bool reparameterise, bool quantile_normalise) {
+	NumericVector x = transform_each_way_sim(
+		_s,
 		logit_mean_f,
 		log_alpha_plus_beta_f,
 		logit_mean_g,
 		log_alpha_plus_beta_g,
 		reparameterise
 	);
+	return x;
 }
 
 double State::get_gamma_lik(Likelihood lik, double temperature) { return lik.get_gamma_lik(gamma) / temperature; }

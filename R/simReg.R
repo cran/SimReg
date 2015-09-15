@@ -63,7 +63,8 @@
 	log_alpha_plus_beta_g_proposal_sd=2,
 	phi_jumps=c(0:(ncol(row_is_column_anc)-1), rep(match(unlist(lapply(x[y], get.ancestors, hpo.terms=hpo.terms)), colnames(row_is_column_anc))-1, 50)),
 	pseudo_phi_marginal_prior=c(0:(ncol(row_is_column_anc)-1), rep(match(unlist(lapply(x[y], get.ancestors, hpo.terms=hpo.terms)), colnames(row_is_column_anc))-1, 50)),
-	phi_num_leaves_geometric_rate=1
+	phi_num_leaves_geometric_rate=1,
+	lit_sims=setNames(rep(1, ncol(row_is_column_anc)), colnames(ttsm))
 ) {
 	result <- .Call(
 		"R_sim_reg",
@@ -126,21 +127,23 @@
 		log_alpha_plus_beta_g_proposal_sd,
 		phi_jumps,
 
-		rep(1, ncol(row_is_column_anc)),
+		lit_sims[colnames(ttsm)],
 		row_is_column_anc,
 		phi_num_leaves_geometric_rate,
 		FALSE,
-		TRUE,
 		FALSE,
-		FALSE	
+		0,
+		c(0, 0),
+		0,
+		0,
+		1
 	)
-
 
 	trunc <- function(y) if (class(y) == "matrix") { if (nrow(y) == its) y[(burn+1):(nrow(y)),,drop=FALSE] else y } else { y[(burn+1):(length(y))] }
 
 	result <- c(
 		list(liks=lapply(result$liks, trunc)),
-		lapply(result[setdiff(names(result), "liks")], trunc)
+		lapply(result[setdiff(names(result), c("H", "liks"))], trunc)
 	)
 
 	result$phi <- apply(result$phi, 2, function(x) colnames(row_is_column_anc)[x+1])
@@ -218,7 +221,7 @@
 #' @param row_is_column_anc Logical matrix, whose dimensions are named by HPO term IDs so that cell i,j is TRUE if i is an ancestor term of j
 #' @param case_ids IDs for the N cases from 0 to N-1, indicating which case terms in \code{term_ids} belong to (automatically determined given x)
 #' @param term_ids Vector of HPO term IDs belonging to cases
-#' @param return_pseudo_runs Logical indicating whether to return the MCMC output of the tuning phase of the inference procedure
+#' @param return_tuning_runs Logical indicating whether to return the MCMC output of the tuning phase of the inference procedure
 #' @param tuning_its Number of update cycles to perform in the tuning phase of the inference procedure
 #' @param tuning_burn Number of update cycles to discard in tuning phase
 #' @param burn Number of update cycles to discard 
@@ -256,6 +259,7 @@
 #' @param log_alpha_plus_beta_g_proposal_sd Proposal sd of local jumps in MH updates of log_alpha_plus_beta_g used during inference
 #' @param phi_jumps Vector of HPO term IDs to be used as jumping distribution for proposal replacements of terms in phi during inference given gamma = 1
 #' @param phi_num_leaves_geometric_rate Geometric parameter for truncated geometric distribution on number of leaf terms in phi
+#' @param lit_sims Numeric vector of similarities (greater than 0) of literature phenotype to individual terms (named by term ID)
 #' @return List (by parameter) of vectors of consecutive parameter samples from MCMC inference.
 #' @examples
 #' \dontrun{
@@ -291,7 +295,7 @@ sim.reg <- function(
 	case_ids=unlist(mapply(SIMPLIFY=FALSE, FUN=rep, 0:(length(x)-1), sapply(x, length))),
 	term_ids=as.integer(match(unlist(x), colnames(row_is_column_anc)))-1,
 
-	return_pseudo_runs=FALSE,
+	return_tuning_runs=FALSE,
 	tuning_its=10000,
 	tuning_burn=1000,
 	burn=2000,
@@ -332,7 +336,8 @@ sim.reg <- function(
 	phi_jumps=c(0:(ncol(row_is_column_anc)-1), rep(match(unlist(lapply(x[y], get.ancestors, hpo.terms=hpo.terms)), colnames(row_is_column_anc))-1, 50)),
 	pseudo_phi_marginal_prior=c(0:(ncol(row_is_column_anc)-1), rep(match(unlist(lapply(x[y], get.ancestors, hpo.terms=hpo.terms)), colnames(row_is_column_anc))-1, 50)),
 
-	phi_num_leaves_geometric_rate=1
+	phi_num_leaves_geometric_rate=1,
+	lit_sims=setNames(rep(1, ncol(row_is_column_anc)), colnames(ttsm))
 ) {
 	if (is.character(term_ids)) 
 		term_ids <- match(term_ids, colnames(ttsm))-1
@@ -390,7 +395,8 @@ sim.reg <- function(
 		log_alpha_plus_beta_g_proposal_sd=log_alpha_plus_beta_g_proposal_sd,
 		phi_jumps=phi_jumps,
 
-		phi_num_leaves_geometric_rate=phi_num_leaves_geometric_rate
+		phi_num_leaves_geometric_rate=phi_num_leaves_geometric_rate,
+		lit_sims=lit_sims
 	)
 
 	pheno.out <- .sim.reg(
@@ -440,9 +446,12 @@ sim.reg <- function(
 		log_alpha_plus_beta_g_proposal_sd=log_alpha_plus_beta_g_proposal_sd,
 		phi_jumps=phi_jumps,
 
-		phi_num_leaves_geometric_rate=phi_num_leaves_geometric_rate
+		phi_num_leaves_geometric_rate=phi_num_leaves_geometric_rate,
+		lit_sims=lit_sims
 	)
 	
+	H <- (mean(null.out$liks$likelihood) - mean(pheno.out$liks$likelihood))
+
 	result <- .sim.reg(
 		hpo.terms=hpo.terms,
 		ttsm=ttsm,
@@ -506,11 +515,16 @@ sim.reg <- function(
 		log_alpha_plus_beta_g_proposal_sd=log_alpha_plus_beta_g_proposal_sd,
 		phi_jumps=phi_jumps,
 
-		phi_num_leaves_geometric_rate=phi_num_leaves_geometric_rate
+		phi_num_leaves_geometric_rate=phi_num_leaves_geometric_rate,
+		lit_sims=lit_sims
 	)
 
-	if (return_pseudo_runs)
-		result <- c(result, list(null.out=null.out, pheno.out=pheno.out))
+	if (return_tuning_runs) {
+		result$null_out <- null.out
+		result$pheno_out <- pheno.out
+	}
+
+	result$est.mpg <- mean(result$gamma)
 
 	result
 }
