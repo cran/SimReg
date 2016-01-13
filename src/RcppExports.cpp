@@ -33,9 +33,7 @@ RcppExport SEXP R_log_odds_trace(
 	SEXP R_logit_mean_f,
 	SEXP R_log_alpha_plus_beta_f,
 	SEXP R_logit_mean_g,
-	SEXP R_log_alpha_plus_beta_g,
-	SEXP R_reparameterise,
-	SEXP R_quantile_normalise
+	SEXP R_log_alpha_plus_beta_g
 ) {
 BEGIN_RCPP
 	NumericMatrix ttsm(R_ttsm);
@@ -75,7 +73,7 @@ BEGIN_RCPP
 			ttsm,
 			phi,
 			h,
-			as<bool>(R_quantile_normalise)
+			false
 		);
 
 		NumericVector x = transform_each_way_sim(
@@ -84,7 +82,7 @@ BEGIN_RCPP
 			log_alpha_plus_beta_f_trace[i],
 			logit_mean_g_trace[i],
 			log_alpha_plus_beta_g_trace[i],
-			as<bool>(R_reparameterise)
+			true
 		);
 
 		for (int case_num = 0; case_num < h.num_cases; case_num++)
@@ -375,7 +373,6 @@ BEGIN_RCPP
 	NumericVector target_range(R_target_range);
 	int adapt_block_size = as<int>(R_adapt_block_size);
 	int max_tuning_batches = as<int>(R_max_tuning_batches);
-	int repeats = as<int>(R_repeats);
 
 	int batch_number = 0;
 	double adaption_rate = 4;
@@ -432,3 +429,5 @@ BEGIN_RCPP
 
 END_RCPP
 }
+
+

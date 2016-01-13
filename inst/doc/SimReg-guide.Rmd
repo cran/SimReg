@@ -1,0 +1,81 @@
+---
+title: "Similarity Regression"
+author: "Daniel Greene"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Similarity Regression}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\usepackage[utf8]{inputenc}
+---
+```{r echo=FALSE}
+knitr::opts_chunk$set(dev="svg", fig.width=7, fig.height=7)
+```
+
+`SimReg` has a function `sim_reg` for performing *Bayesian Similarity Regression*. The aim is to estimate the probability of an association between ontological term sets and a binary variable, and should such an association exist, a *characteristic ontological profile* such that ontological similarity to the profile increases the probability of the binary variable taking the value `TRUE`. The procedure has been used in the context of linking an ontologically encoded phenotype (as HPO terms) to a binary genotype (indicating the presence or absence of a rare variant within given genes) [1], so in this guide, we'll use the same theme.  
+
+`sim_reg` is an MCMC routine, and as such, its output is samples of parameter values from their posterior distributions. The function accepts many arguments including the response variable `y` (`logical`), the ontologically encoded predictor variable `x` (`list`), ones controlling the sampling pattern, ones controlling the tuning of the parameter proposal schemes and others specifying the prior distributions of the parameters. 
+
+It returns a list of traces for the sampled parameters. Of particular interest are the estimated mean posteriors of `gamma` - the model selection indicator, indicating whether a particular sample was taken given an association between `x` and `y` or not - which can be interpreted as an estimate of the probability of an association under the model assumptions - which is stored in the 'mean_posterior_gamma' slot of the output (i.e. `result$mean_posterior_gamma` - can also be calculated using `mean(result$gamma)`), and the posterior distribution of the characteristic ontological profile phi.
+
+However, because most of these variables have default values, the output of algorithm can be demonstrated passing only a few. To set up a workspace were we can run a simple example, we need an `ontology_index` object, so we load the `ontologyIndex` package which contains an example - the Human Phenotype Ontology, `hpo`, and create an HPO profile `template` and a super set of terms, `terms`, from which we'll generate random term sets to run the algorithm on. In our setting, we'll interpret this HPO profile `template` as the phenotype of a hypothetical disease. We set `template` to the set `HP:0005537, HP:0000729` and `HP:0001873`, corresponding to phenotype abnormalities 'Decreased mean platelet volume', 'Autistic behavior' and 'Thrombocytopenia' respectively.
+
+```{r}
+suppressPackageStartupMessages(library(ontologyIndex))
+suppressPackageStartupMessages(library(SimReg))
+data(hpo)
+set.seed(1)
+
+template <- c("HP:0005537", "HP:0000729", "HP:0001873")
+terms <- get_ancestors(hpo, c(template, sample(hpo$id, size=50)))
+```
+
+First, we'll do an example where there is no association between `x` and `y`, and then one where there is an association. 
+
+In the example with no association, we'll fix `y`, with 10 `TRUE`s and generate the `x` randomly, with each set of ontological terms determined by sampling 5 random terms from `terms`.
+```{r}
+y <- c(rep(TRUE, 10), rep(FALSE, 90))
+x <- replicate(simplify=FALSE, n=100, expr=minimal_set(hpo, sample(terms, size=5)))
+```
+
+Thus, our input data looks like:
+```{r}
+y
+head(x)
+```
+
+Now we can call the `sim_reg` function to estimate the probability of an association (note: by default, the probability of an association has a prior of 0.05 and this can be set by passing a `gamma_prior_prob` argument), and print the mean posterior value of `gamma`, corresponding to our estimated probability of association.
+
+```{r}
+no_assoc <- sim_reg(ontology=hpo, x=x, y=y)
+no_assoc$mean_posterior_gamma
+```
+
+We note that there is a low probability of association. Now, we sample `x` conditional on `y`, so that if `y[i] == TRUE`, then `x` has 2 out of the 3 terms in `template` added to its profile.
+```{r}
+x_assoc <- lapply(y, function(y_i) minimal_set(hpo, c(
+	sample(terms, size=5), if (y_i) sample(template, size=2))))
+```
+
+If we look again at the first few values in `x` for which `y[i] == TRUE`, we notice that they contain terms from the template.
+```{r}
+head(x_assoc)
+```
+
+Now we run the procedure again with the new `x` and `y` and print the mean posterior value of `gamma`.
+```{r}
+assoc <- sim_reg(ontology=hpo, x=x_assoc, y=y)
+assoc$mean_posterior_gamma
+```
+
+We note that we infer a higher probability of association. We can also visualise the estimated characteristic ontological profile, using the function `phi_plot`, and note that the inferred characteristic phenotype corresponds well to `template`.
+
+```{r}
+phi_plot(hpo, assoc$phi[assoc$gamma], max_terms=10, fontsize=30)
+```
+
+Note that we must subset the `$phi` slot by `$gamma`, as the characteristic ontological profile `phi` has no effect if `gamma == FALSE`. A more comprehensive summary of the output can be exported to pdf using the function `sim_reg_summary`.
+
+## References
+
+1.  D. Greene, NIHR BioResource, S. Richardson, E. Turro, `Phenotype similarity regression for identifying the genetic determinants of rare diseases', American Journal of Human Genetics, 2016 (to be released)

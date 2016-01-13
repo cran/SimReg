@@ -1,5 +1,10 @@
-.sim.reg <- function(
-	hpo.terms,
+#' @importFrom ontologyIndex get_term_info_content get_term_descendancy_matrix get_ancestors
+#' @importFrom ontologySimilarity get_term_sim_mat
+#' @importFrom stats sd runif rnorm
+#' @importFrom Rcpp evalCpp
+#' @useDynLib SimReg
+sim_reg_gamma1 <- function(
+	ontology=NULL,
 	y,
 	x=NULL, 
 	g=rep(0, length(y)),
@@ -8,18 +13,18 @@
 	burn=2000,
 	record_sims=FALSE,
 
-	information.content=get.term.info.content(hpo.terms, hpo.phenotypes=x),
-	ttsm=get.term.term.matrix(hpo.terms, information.content, TRUE),
+	information_content=get_term_info_content(ontology, term_sets=x),
+	term_sim_mat=get_term_sim_mat(ontology, information_content, TRUE),
 
-	row_is_column_anc=get.term.descendancy.matrix(hpo.terms, names(information.content)),
+	term_descendancy_matrix=get_term_descendancy_matrix(ontology, names(information_content)),
 	case_ids=unlist(mapply(SIMPLIFY=FALSE, FUN=rep, 0:(length(x)-1), sapply(x, length))),
-	term_ids=as.integer(match(unlist(x), colnames(row_is_column_anc)))-1,
+	term_ids=as.integer(match(unlist(x), colnames(term_descendancy_matrix)))-1,
 
 	gamma=(runif(1) < gamma_prior_prob)[1],
 	alpha_star=rnorm(n=1, mean=alpha_star_mean, sd=alpha_star_sd),
 	alpha=rnorm(n=1, mean=alpha_mean, sd=alpha_sd),
 	log_beta=rnorm(n=1, mean=log_beta_mean, sd=log_beta_sd),
-	phi=sample.int(n=ncol(row_is_column_anc), size=3, replace=TRUE)-1,
+	phi=sample.int(n=ncol(term_descendancy_matrix), size=3, replace=TRUE)-1,
 	logit_mean_f=rnorm(n=1, mean=logit_mean_f_mean, sd=logit_mean_f_sd),
 	log_alpha_plus_beta_f=rnorm(n=1, mean=log_alpha_plus_beta_f_mean, sd=log_alpha_plus_beta_f_sd),
 	logit_mean_g=rnorm(n=1, mean=logit_mean_g_mean, sd=logit_mean_g_sd),
@@ -61,10 +66,10 @@
 	log_alpha_plus_beta_f_proposal_sd=2,
 	logit_mean_g_proposal_sd=2,
 	log_alpha_plus_beta_g_proposal_sd=2,
-	phi_jumps=c(0:(ncol(row_is_column_anc)-1), rep(match(unlist(lapply(x[y], get.ancestors, hpo.terms=hpo.terms)), colnames(row_is_column_anc))-1, 50)),
-	pseudo_phi_marginal_prior=c(0:(ncol(row_is_column_anc)-1), rep(match(unlist(lapply(x[y], get.ancestors, hpo.terms=hpo.terms)), colnames(row_is_column_anc))-1, 50)),
+	phi_jumps=c(0:(ncol(term_descendancy_matrix)-1), rep(match(unlist(lapply(x[y], get_ancestors, ontology=ontology)), colnames(term_descendancy_matrix))-1, 50)),
+	pseudo_phi_marginal_prior=c(0:(ncol(term_descendancy_matrix)-1), rep(match(unlist(lapply(x[y], get_ancestors, ontology=ontology)), colnames(term_descendancy_matrix))-1, 50)),
 	phi_num_leaves_geometric_rate=1,
-	lit_sims=setNames(rep(1, ncol(row_is_column_anc)), colnames(ttsm))
+	lit_sims=setNames(rep(1, ncol(term_descendancy_matrix)), colnames(term_sim_mat))
 ) {
 	result <- .Call(
 		"R_sim_reg",
@@ -72,7 +77,7 @@
 		its,
 		thin,
 		record_sims,
-		ttsm,
+		term_sim_mat,
 		term_ids,
 		case_ids,
 		y,
@@ -127,8 +132,8 @@
 		log_alpha_plus_beta_g_proposal_sd,
 		phi_jumps,
 
-		lit_sims[colnames(ttsm)],
-		row_is_column_anc,
+		lit_sims[colnames(term_sim_mat)],
+		term_descendancy_matrix,
 		phi_num_leaves_geometric_rate,
 		FALSE,
 		FALSE,
@@ -146,7 +151,8 @@
 		lapply(result[setdiff(names(result), c("H", "liks"))], trunc)
 	)
 
-	result$phi <- apply(result$phi, 2, function(x) colnames(row_is_column_anc)[x+1])
+	result$phi_vector <- apply(result$phi, 2, function(x) colnames(term_descendancy_matrix)[x+1])
+	result$phi <- mapply(SIMPLIFY=FALSE, FUN="[", split(result$phi_vector, seq(nrow(result$phi_vector))), split(as_row_leaves(term_descendancy_matrix, result$phi_vector), seq(nrow(result$phi_vector))))
 
 	c(	
 		list(
@@ -192,14 +198,13 @@
 		), 
 		result, 
 		c(
-			result,
-			c(
-				list(phi_accept=sapply(1:(nrow(result$phi)-1), function(x) !identical(result$phi[x,], result$phi[x+1,]))),
-				lapply(
-					c("alpha_star", "alpha", "log_beta", "logit_mean_f", "log_alpha_plus_beta_f", "logit_mean_g", "log_alpha_plus_beta_g") %>%
-					(function(x) setNames(x, paste(x, "_accept", sep=""))),
-					function(x) result[[x]][1:(length(result[[x]])-1)] != result[[x]][2:length(result[[x]])]
-				)
+			list(phi_accept=sapply(1:(nrow(result$phi_vector)-1), function(x) !identical(result$phi_vector[x,], result$phi_vector[x+1,]))),
+			lapply(
+				local({
+					x <- c("alpha_star", "alpha", "log_beta", "logit_mean_f", "log_alpha_plus_beta_f", "logit_mean_g", "log_alpha_plus_beta_g")
+					setNames(x, paste(x, "_accept", sep=""))
+				}),
+				function(x) result[[x]][1:(length(result[[x]])-1)] != result[[x]][2:length(result[[x]])]
 			)
 		)
 	)
@@ -207,81 +212,81 @@
 
 #' Similarity regression
 #'
-#' Performins Bayesian `similarity regression' on given binary genotype \code{y} (logical vector) against HPO encoded phenotype \code{x} (list of character vectors of HPO term IDs). It returns a list of traces for the various estimated parameters. Of particular interest are the estimated mean posterior of \code{gamma} (the model selection indicator, thus giving an estimate of the probability of an association under the model assumptions - obtained with \code{mean(result$gamma)}) and the posterior distribution of the characteristic phenotype (which can be visualised by the functions \code{\link{hpo.plot.marginal.freqs}}, \code{\link{two.term.marginals.plot}}, and \code{\link{single.term.marginals.plot}}).
+#' Performins Bayesian `similarity regression' on given binary genotype \code{y} (logical vector) against ontological term sets \code{x} (list of character vectors of term IDs). This could, for example, be a \code{list} of character vectors of HPO term IDs representing case phenotypes. It returns a list of traces for the sampled parameters. Of particular interest are the estimated mean posteriors of \code{gamma} (the model selection indicator, thus giving an estimate of the probability of an association under the model assumptions - stored in the `mean_posterior_gamma' slot in the result, i.e. \code{result$mean_posterior_gamma} (which can also be calculated \code{mean(result$gamma)}), and the characteristic ontological profile phi (which can be visualised by the functions \code{\link{phi_plot}}, \code{\link{term_pair_marginals_plot}}, and \code{\link{term_marginals}}).
 #'
-#' @template hpo.terms
-#' @param y Logical vector of genotypes (typically 1 for rare genotype, 0 for common genotype)
-#' @param x List of character vectors of HPO phenotypes of cases
-#' @param g Genotype log odds offsets per individual
-#' @param its Number of update cycles to perform 
-#' @param thin Factor by which to thin resultant chains of parameter samples
-#' @param record_sims Logical indicating whether to record trace of similarities
-#' @param information.content Numeric vector, named by HPO IDs, containing the information content of corresponding terms
-#' @param ttsm The `term-term' similarity matrix, a numeric matrix whose dimensions are named by the terms so that cell i,j contains the similarity of term i to term j
-#' @param row_is_column_anc Logical matrix, whose dimensions are named by HPO term IDs so that cell i,j is TRUE if i is an ancestor term of j
-#' @param case_ids IDs for the N cases from 0 to N-1, indicating which case terms in \code{term_ids} belong to (automatically determined given x)
-#' @param term_ids Vector of HPO term IDs belonging to cases
-#' @param return_tuning_runs Logical indicating whether to return the MCMC output of the tuning phase of the inference procedure
-#' @param tuning_its Number of update cycles to perform in the tuning phase of the inference procedure
-#' @param tuning_burn Number of update cycles to discard in tuning phase
-#' @param burn Number of update cycles to discard 
-#' @param gamma Initial value of model selection indicator gamma.
-#' @param alpha_star  Initial value of alpha_star, the rate of observing the rare genotype y = 1 under gamma = 0, i.e. the no association model 
-#' @param alpha Initial value of alpha, the background rate of observing the rare genotype under gamma = 1
-#' @param log_beta Initial value of log_beta, the log of the effect size of onotological similarity
-#' @param phi Character vector of HPO term IDs giving the initial value of phi, the characteristic phenotype
-#' @param logit_mean_f Initial value of logit_mean_f
-#' @param log_alpha_plus_beta_f Initial value of log_alpha_plus_beta_f
-#' @param logit_mean_g Initial value of logit_mean_g
-#' @param log_alpha_plus_beta_g Initial value of log_alpha_plus_beta_g
-#' @param gamma_prior_prob Prior probability of gamma = 1
-#' @param alpha_star_mean Prior mean of alpha_star given gamma = 0
-#' @param alpha_mean Prior mean of alpha given gamma = 1
-#' @param alpha_star_sd Prior sd of alpha_star given gamma = 0
-#' @param alpha_sd Prior sd of alpha given gamma = 1
-#' @param log_beta_mean Prior mean of log_beta given gamma = 1
-#' @param log_beta_sd Prior sd of log_beta given gamma = 1
-#' @param logit_mean_f_mean Prior mean of logit_mean_f given gamma = 1
-#' @param logit_mean_f_sd Prior sd of logit_mean_f given gamma = 1
-#' @param log_alpha_plus_beta_f_mean Prior mean of log_alpha_plus_beta_f given gamma = 1
-#' @param log_alpha_plus_beta_f_sd Prior sd of log_alpha_plus_beta_f given gamma = 1
-#' @param logit_mean_g_mean Prior mean of logit_mean_g given gamma = 1
-#' @param logit_mean_g_sd Prior sd of logit_mean_g given gamma = 1
-#' @param log_alpha_plus_beta_g_mean Prior mean of log_alpha_plus_beta_g given gamma = 1
-#' @param log_alpha_plus_beta_g_sd Prior sd of log_alpha_plus_beta_g given gamma = 1
-#' @param pseudo_phi_marginal_prior Vector of HPO term IDs to be used as prior distribution on marginal probability of single term in phi given gamma = 0
-#' @param alpha_star_proposal_sd Proposal sd of local jumps in MH updates of alpha_star used during inference
-#' @param alpha_proposal_sd Proposal sd of local jumps in MH updates of alpha used during inference
-#' @param log_beta_proposal_sd Proposal sd of local jumps in MH updates of log_beta used during inference
-#' @param logit_mean_f_proposal_sd Proposal sd of local jumps in MH updates of logit_mean_f used during inference
-#' @param log_alpha_plus_beta_f_proposal_sd Proposal sd of local jumps in MH updates of log_alpha_plus_beta_f used during inference
-#' @param logit_mean_g_proposal_sd Proposal sd of local jumps in MH updates of logit_mean_g used during inference
-#' @param log_alpha_plus_beta_g_proposal_sd Proposal sd of local jumps in MH updates of log_alpha_plus_beta_g used during inference
-#' @param phi_jumps Vector of HPO term IDs to be used as jumping distribution for proposal replacements of terms in phi during inference given gamma = 1
-#' @param phi_num_leaves_geometric_rate Geometric parameter for truncated geometric distribution on number of leaf terms in phi
-#' @param lit_sims Numeric vector of similarities (greater than 0) of literature phenotype to individual terms (named by term ID)
+#' @template ontology
+#' @param y Logical vector of genotypes (typically 1 for rare genotype, 0 for common genotype).
+#' @param x List of character vectors of terms IDs,
+#' @param g Genotype log odds offset per individual.
+#' @param its Number of update cycles to perform .
+#' @param thin Factor by which to thin resultant chains of parameter samples.
+#' @param record_sims Logical indicating whether to record trace of similarities.
+#' @param information_content Numeric vector, named by HPO IDs, containing the information content of corresponding terms.
+#' @param term_sim_mat The `term-term' similarity matrix, a numeric matrix whose dimensions are named by the terms so that cell i,j contains the similarity of term i to term j.
+#' @param term_descendancy_matrix Logical matrix, whose dimensions are named by HPO term IDs so that cell i,j is TRUE if i is an ancestor term of j.
+#' @param case_ids IDs for the N cases from 0 to N-1, indicating which case terms in \code{term_ids} belong to (automatically determined given x).
+#' @param term_ids Vector of HPO term IDs belonging to cases.
+#' @param return_tuning_runs Logical indicating whether to return the MCMC output of the tuning phase of the inference procedure.
+#' @param tuning_its Number of update cycles to perform in the tuning phase of the inference procedure.
+#' @param tuning_burn Number of update cycles to discard in tuning phase.
+#' @param burn Number of update cycles to discard .
+#' @param gamma Initial value of model selection indicator gamma..
+#' @param alpha_star  Initial value of alpha_star, the rate of observing the rare genotype y = 1 under gamma = 0, i.e. the no association model .
+#' @param alpha Initial value of alpha, the background rate of observing the rare genotype under gamma = 1.
+#' @param log_beta Initial value of log_beta, the log of the effect size of onotological similarity.
+#' @param phi Character vector of HPO term IDs giving the initial value of phi, the characteristic phenotype.
+#' @param logit_mean_f Initial value of logit_mean_f.
+#' @param log_alpha_plus_beta_f Initial value of log_alpha_plus_beta_f.
+#' @param logit_mean_g Initial value of logit_mean_g.
+#' @param log_alpha_plus_beta_g Initial value of log_alpha_plus_beta_g.
+#' @param gamma_prior_prob Prior probability of gamma = 1.
+#' @param alpha_star_mean Prior mean of alpha_star given gamma = 0.
+#' @param alpha_mean Prior mean of alpha given gamma = 1.
+#' @param alpha_star_sd Prior sd of alpha_star given gamma = 0.
+#' @param alpha_sd Prior sd of alpha given gamma = 1.
+#' @param log_beta_mean Prior mean of log_beta given gamma = 1.
+#' @param log_beta_sd Prior sd of log_beta given gamma = 1.
+#' @param logit_mean_f_mean Prior mean of logit_mean_f given gamma = 1.
+#' @param logit_mean_f_sd Prior sd of logit_mean_f given gamma = 1.
+#' @param log_alpha_plus_beta_f_mean Prior mean of log_alpha_plus_beta_f given gamma = 1.
+#' @param log_alpha_plus_beta_f_sd Prior sd of log_alpha_plus_beta_f given gamma = 1.
+#' @param logit_mean_g_mean Prior mean of logit_mean_g given gamma = 1.
+#' @param logit_mean_g_sd Prior sd of logit_mean_g given gamma = 1.
+#' @param log_alpha_plus_beta_g_mean Prior mean of log_alpha_plus_beta_g given gamma = 1.
+#' @param log_alpha_plus_beta_g_sd Prior sd of log_alpha_plus_beta_g given gamma = 1.
+#' @param pseudo_phi_marginal_prior Vector of HPO term IDs to be used as prior distribution on marginal probability of single term in phi given gamma = 0.
+#' @param alpha_star_proposal_sd Proposal sd of local jumps in MH updates of alpha_star used during inference.
+#' @param alpha_proposal_sd Proposal sd of local jumps in MH updates of alpha used during inference.
+#' @param log_beta_proposal_sd Proposal sd of local jumps in MH updates of log_beta used during inference.
+#' @param logit_mean_f_proposal_sd Proposal sd of local jumps in MH updates of logit_mean_f used during inference.
+#' @param log_alpha_plus_beta_f_proposal_sd Proposal sd of local jumps in MH updates of log_alpha_plus_beta_f used during inference.
+#' @param logit_mean_g_proposal_sd Proposal sd of local jumps in MH updates of logit_mean_g used during inference.
+#' @param log_alpha_plus_beta_g_proposal_sd Proposal sd of local jumps in MH updates of log_alpha_plus_beta_g used during inference.
+#' @param phi_jumps Vector of HPO term IDs to be used as jumping distribution for proposal replacements of terms in phi during inference given gamma = 1.
+#' @param phi_num_leaves_geometric_rate Geometric parameter for truncated geometric distribution on number of leaf terms in phi.
+#' @param lit_sims Numeric vector of similarities (greater than 0) of literature phenotype to individual terms (named by term ID).
 #' @return List (by parameter) of vectors of consecutive parameter samples from MCMC inference.
 #' @examples
 #' \dontrun{
 #' set.seed(0)
-#' data(hpo.terms)
-#' disease.terms <- c("HP:0005537", "HP:0000729", "HP:0001873")
-#' all.terms <- Filter(x=get.ancestors(hpo.terms, 
-#'	c(disease.terms, sample(hpo.terms$id, size=50))), 
-#'	f=function(tm) "HP:0000001" %in% hpo.terms$ancestors[[tm]])
+#' data(hpo)
+#' disease_terms <- c("HP:0005537", "HP:0000729", "HP:0001873")
+#' all_terms <- get_ancestors(hpo, 
+#'	c(disease_terms, sample(hpo$id, size=50)))
 #' y <- c(rep(FALSE, 96), rep(TRUE, 3))
-#' x <- lapply(y, function(.y) clean.terms(
-#'	hpo.terms, if (!.y) sample(all.terms, size=3) else 
-#'		c(sample(all.terms, size=1), disease.terms[runif(n=3) < 0.8])))
-#' sim.reg.out <- sim.reg(hpo.terms, x=x, y=y)
-#' mean(sim.reg.out$gamma)
-#' hpo.plot.marginal.freqs(hpo.terms, 
-#'	get.term.descendancy.matrix(hpo.terms, all.terms), 
-#'	sim.reg.out$phi[sim.reg.out$gamma,])
+#' x <- lapply(y, function(.y) minimal_set(
+#'	hpo, if (!.y) sample(all_terms, size=3) else 
+#'		c(sample(all_terms, size=1), disease_terms[runif(n=3) < 0.8])))
+#' sim_reg_out <- sim_reg(ontology=hpo, x=x, y=y)
+#' mean(sim_reg_out$gamma)
+#' phi_plot(hpo, 
+#'	sim_reg_out$phi[sim_reg_out$gamma])
 #' }
 #' @export
-sim.reg <- function(
-	hpo.terms,
+#' @importFrom stats rnorm runif
+#' @importFrom ontologyIndex get_term_descendancy_matrix
+sim_reg <- function(
+	ontology=NULL,
 	y,
 	x=NULL, 
 	g=rep(0, length(y)),
@@ -289,11 +294,11 @@ sim.reg <- function(
 	thin=1,
 	record_sims=FALSE,
 
-	information.content=get.term.info.content(hpo.terms, hpo.phenotypes=x),
-	ttsm=get.term.term.matrix(hpo.terms, information.content, TRUE),
-	row_is_column_anc=get.term.descendancy.matrix(hpo.terms, names(information.content)),
+	information_content=get_term_info_content(ontology, term_sets=x),
+	term_sim_mat=prune_sim_mat(ontology=ontology, get_term_sim_mat(ontology=ontology, information_content=information_content)),
+	term_descendancy_matrix=get_term_descendancy_matrix(ontology, colnames(term_sim_mat)),
 	case_ids=unlist(mapply(SIMPLIFY=FALSE, FUN=rep, 0:(length(x)-1), sapply(x, length))),
-	term_ids=as.integer(match(unlist(x), colnames(row_is_column_anc)))-1,
+	term_ids=as.integer(match(unlist(x), colnames(term_descendancy_matrix)))-1,
 
 	return_tuning_runs=FALSE,
 	tuning_its=10000,
@@ -304,7 +309,7 @@ sim.reg <- function(
 	alpha_star=rnorm(n=1, mean=alpha_star_mean, sd=alpha_star_sd),
 	alpha=rnorm(n=1, mean=alpha_mean, sd=alpha_sd),
 	log_beta=rnorm(n=1, mean=log_beta_mean, sd=log_beta_sd),
-	phi=sample.int(n=ncol(row_is_column_anc), size=3, replace=TRUE)-1,
+	phi=sample.int(n=ncol(term_descendancy_matrix), size=3, replace=TRUE)-1,
 	logit_mean_f=rnorm(n=1, mean=logit_mean_f_mean, sd=logit_mean_f_sd),
 	log_alpha_plus_beta_f=rnorm(n=1, mean=log_alpha_plus_beta_f_mean, sd=log_alpha_plus_beta_f_sd),
 	logit_mean_g=rnorm(n=1, mean=logit_mean_g_mean, sd=logit_mean_g_sd),
@@ -333,25 +338,25 @@ sim.reg <- function(
 	logit_mean_g_proposal_sd=2,
 	log_alpha_plus_beta_g_proposal_sd=2,
 
-	phi_jumps=c(0:(ncol(row_is_column_anc)-1), rep(match(unlist(lapply(x[y], get.ancestors, hpo.terms=hpo.terms)), colnames(row_is_column_anc))-1, 50)),
-	pseudo_phi_marginal_prior=c(0:(ncol(row_is_column_anc)-1), rep(match(unlist(lapply(x[y], get.ancestors, hpo.terms=hpo.terms)), colnames(row_is_column_anc))-1, 50)),
+	phi_jumps=c(0:(ncol(term_descendancy_matrix)-1), rep(match(unlist(lapply(x[y], get_ancestors, ontology=ontology)), colnames(term_descendancy_matrix))-1, 50)),
+	pseudo_phi_marginal_prior=c(0:(ncol(term_descendancy_matrix)-1), rep(match(unlist(lapply(x[y], get_ancestors, ontology=ontology)), colnames(term_descendancy_matrix))-1, 50)),
 
 	phi_num_leaves_geometric_rate=1,
-	lit_sims=setNames(rep(1, ncol(row_is_column_anc)), colnames(ttsm))
+	lit_sims=setNames(rep(1, ncol(term_descendancy_matrix)), colnames(term_sim_mat))
 ) {
 	if (is.character(term_ids)) 
-		term_ids <- match(term_ids, colnames(ttsm))-1
+		term_ids <- match(term_ids, colnames(term_sim_mat))-1
 
 	if (is.character(phi_jumps)) 
-		phi_jumps <- match(phi_jumps, colnames(ttsm))-1
+		phi_jumps <- match(phi_jumps, colnames(term_sim_mat))-1
 
 	if (is.character(pseudo_phi_marginal_prior)) 
-		pseudo_phi_marginal_prior <- match(pseudo_phi_marginal_prior, colnames(ttsm))-1
+		pseudo_phi_marginal_prior <- match(pseudo_phi_marginal_prior, colnames(term_sim_mat))-1
 
-	null.out <- .sim.reg(
-		hpo.terms=hpo.terms,
-		ttsm=ttsm,
-		row_is_column_anc=row_is_column_anc,
+	null.out <- sim_reg_gamma1(
+		ontology=ontology,
+		term_sim_mat=term_sim_mat,
+		term_descendancy_matrix=term_descendancy_matrix,
 		y=y,
 		g=g,
 		case_ids=case_ids,
@@ -399,10 +404,10 @@ sim.reg <- function(
 		lit_sims=lit_sims
 	)
 
-	pheno.out <- .sim.reg(
-		hpo.terms=hpo.terms,
-		ttsm=ttsm,
-		row_is_column_anc=row_is_column_anc,
+	pheno.out <- sim_reg_gamma1(
+		ontology=ontology,
+		term_sim_mat=term_sim_mat,
+		term_descendancy_matrix=term_descendancy_matrix,
 		y=y,
 		g=g,
 		case_ids=case_ids,
@@ -452,10 +457,10 @@ sim.reg <- function(
 	
 	H <- (mean(null.out$liks$likelihood) - mean(pheno.out$liks$likelihood))
 
-	result <- .sim.reg(
-		hpo.terms=hpo.terms,
-		ttsm=ttsm,
-		row_is_column_anc=row_is_column_anc,
+	result <- sim_reg_gamma1(
+		ontology=ontology,
+		term_sim_mat=term_sim_mat,
+		term_descendancy_matrix=term_descendancy_matrix,
 		y=y,
 		g=g,
 		case_ids=case_ids,
@@ -524,7 +529,7 @@ sim.reg <- function(
 		result$pheno_out <- pheno.out
 	}
 
-	result$est.mpg <- mean(result$gamma)
+	result$mean_posterior_gamma <- mean(result$gamma)
 
 	result
 }

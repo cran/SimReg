@@ -3,27 +3,33 @@
 \alias{SimReg}
 \docType{package}
 \title{
-Functions for HPO logic regression
+Similarity Regression Functions
 }
 \description{
-Functions for logic regression style algorithms, regression genotype against ontologically encoded phenotypes
+Functions for performing Bayesian `similarity regression',
+specialised for modelling the association between a HPO-encoded phenotype
+and binary genotype. A `no association' model is compared with one in which
+the log odds of having a rare genotype is linked to the semantic similarity
+between patient phenotype and a latent characteristic phenotype. The method
+estimates the probability of an association together with an HPO-coded phenotype
+characteristic of the disease. 
 }
 \details{
 \tabular{ll}{
-Package: \tab hpoPlot\cr
+Package: \tab SimReg\cr
 Type: \tab Package\cr
-Version: \tab 1.0\cr
-Date: \tab 2014-10-01\cr
-License: \tab What license is it under?\cr
+Version: \tab 1.3\cr
+Date: \tab 2016-01-12\cr
+License: \tab GPL (>= 2)\cr
 }
-Key functions include hpo.sim.reg, for performing HPO regression of binary response variable (typically representing presence of genetic variant) against ontologically encoded phenotype
+Key functions include sim.reg, for performing similarity regression of binary response variable against an ontologically encoded predictor. The typical use would be for fitting a model for the presence of a rare genetic variant conditional on an ontologically encoded phenotype.
 }
 \author{
 Daniel Greene <dg333@cam.ac.uk>
 
 Maintainer: Daniel Greene <dg333@cam.ac.uk>
 }
-%\references{
-%~~ Literature or other references for background information ~~
-%}
-\keyword{ HPO }
+\references{
+	D. Greene, NIHR BioResource, S. Richardson, E. Turro, `Phenotype similarity regression for identifying the genetic determinants of rare diseases', American Journal of Human Genetics, 2016 (to be released).
+}
+\keyword{ HPO , MCMC, ontology }

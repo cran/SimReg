@@ -86,9 +86,7 @@ double geom_known_prior::operator()(Rcpp::IntegerVector phi) {
 		total_mass += exp(i * log(rate)) * exp(log_nCr(row_is_column_anc.nrow(), i));
 	}
 
-	double normalise_by = exp(num_leaves * log(rate)) / total_mass ;
-
-	return (double)num_leaves * log(rate) + log(normalise_by) + log(lit_sim) - log(mean_lit_sim) - log((double)num_leaf_set_reps(
+	return (double)num_leaves * log(rate) - log(total_mass) + log(lit_sim) - log(mean_lit_sim) - log((double)num_leaf_set_reps(
 		num_leaves,
 		num_exclusive_ancs,
 		phi.length()

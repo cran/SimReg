@@ -17,21 +17,19 @@ RcppExport SEXP leaf_matrix(
 
 RcppExport SEXP R_log_odds_trace(
 	SEXP R_ttsm,
+	SEXP R_row_is_column_anc,
 	SEXP R_term_ids,
 	SEXP R_case_ids,
 	SEXP R_g,
 	SEXP R_phi,
-	SEXP R_m,
+	SEXP R_gamma,
 	SEXP R_alpha_star,
 	SEXP R_alpha,
-	SEXP R_beta,
-	SEXP R_expit_b,
-	SEXP R_expit_a,
-	SEXP R_expit_b2,
-	SEXP R_expit_a2,
-	SEXP R_row_is_column_anc,
-	SEXP R_reparameterise,
-	SEXP R_quantile_normalise
+	SEXP R_log_beta,
+	SEXP R_logit_mean_f,
+	SEXP R_log_alpha_plus_beta_f,
+	SEXP R_logit_mean_g,
+	SEXP R_log_alpha_plus_beta_g
 );
 
 RcppExport SEXP R_get_each_way_sim(
