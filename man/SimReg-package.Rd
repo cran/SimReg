@@ -18,7 +18,7 @@ characteristic of the disease.
 \tabular{ll}{
 Package: \tab SimReg\cr
 Type: \tab Package\cr
-Version: \tab 1.3\cr
+Version: \tab 1.4\cr
 Date: \tab 2016-01-12\cr
 License: \tab GPL (>= 2)\cr
 }
@@ -30,6 +30,6 @@ Daniel Greene <dg333@cam.ac.uk>
 Maintainer: Daniel Greene <dg333@cam.ac.uk>
 }
 \references{
-	D. Greene, NIHR BioResource, S. Richardson, E. Turro, `Phenotype similarity regression for identifying the genetic determinants of rare diseases', American Journal of Human Genetics, 2016 (to be released).
+	D. Greene, NIHR BioResource, S. Richardson, E. Turro, `Phenotype similarity regression for identifying the genetic determinants of rare diseases', The American Journal of Human Genetics 98, 1-10, March 3, 2016.
 }
 \keyword{ HPO , MCMC, ontology }

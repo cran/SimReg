@@ -119,27 +119,12 @@ int num_orderings(IntegerVector items_of_each_kind) {
 }
 
 int num_leaf_set_reps(int leaves, int num_exc_ancs, int vector_length) {
-	int result = 0;
-
-	IntegerVector anc_combs(vector_length - leaves + 1);
-	IntegerVector leaf_placement_combos(vector_length - leaves + 1);
-	for (int i = 0; i <= vector_length - leaves; i++) {
-		anc_combs[i] = int_pow(num_exc_ancs, i);
-		leaf_placement_combos[i] = ncr(vector_length, vector_length-i);
+	int ancs = num_exc_ancs + leaves;
+	int total = int_pow(ancs, vector_length);
+	int inc_exc = -1;
+	for (int i = 1; i <= leaves; i++) {
+		total += inc_exc * ncr(leaves, i) * int_pow(ancs - i, vector_length);
+		inc_exc *= -1;
 	}
-
-	IntegerVector leaf_combo(leaves, 1);		
-	do {
-		int leaf_places = 0;
-		for (int i = 0; i < leaf_combo.length(); i++)
-			leaf_places += leaf_combo[i];
-		int free_terms = vector_length - leaf_places;
-
-		result += num_orderings(leaf_combo) * anc_combs[free_terms] * leaf_placement_combos[free_terms];
-	} 
-	while (next_capped_combo(leaf_combo, leaves, vector_length));
-
-	return result;
+	return total;
 }
-
-

@@ -72,8 +72,7 @@ BEGIN_RCPP
 			row_is_column_anc,
 			ttsm,
 			phi,
-			h,
-			false
+			h
 		);
 
 		NumericVector x = transform_each_way_sim(
@@ -81,8 +80,7 @@ BEGIN_RCPP
 			logit_mean_f_trace[i],
 			log_alpha_plus_beta_f_trace[i],
 			logit_mean_g_trace[i],
-			log_alpha_plus_beta_g_trace[i],
-			true
+			log_alpha_plus_beta_g_trace[i]
 		);
 
 		for (int case_num = 0; case_num < h.num_cases; case_num++)
@@ -94,16 +92,18 @@ BEGIN_RCPP
 END_RCPP
 }
 
-RcppExport SEXP R_get_each_way_sim(
+RcppExport SEXP R_asym_sim_func(
 	SEXP R_ttsm,
 	SEXP R_row_is_column_anc,
 	SEXP R_num_cases,
 	SEXP R_term_ids,
 	SEXP R_case_ids,
 	SEXP R_phi,
-	SEXP R_quantile_normalise
+	SEXP R_average_across_phi
 ) {
 BEGIN_RCPP
+	similarity_function s_fun = as<bool>(R_average_across_phi) ? average_across_phi : average_across_h;
+
 	NumericMatrix ttsm(R_ttsm);
 
 	IntegerVector term_ids(R_term_ids);
@@ -120,31 +120,22 @@ BEGIN_RCPP
 	int phi_size = phi_trace.ncol();
 
 	NumericMatrix av_phi_trace(its, h.num_cases);
-	NumericMatrix av_h_trace(its, h.num_cases);
 	
 	for (int i = 0; i < its; i++) {
 		IntegerVector phi(phi_size);
 		for (int t = 0; t < phi_size; t++)
 			phi[t] = phi_trace(i, t);
 
-		pair<NumericVector, NumericVector> s = get_each_way_sim(
-			row_is_column_anc,
-			ttsm,
-			phi,
-			h,
-			as<bool>(R_quantile_normalise)
-		);
+		IntegerVector phi_minimal = minimal(row_is_column_anc, phi);
+
+		NumericVector s = s_fun(ttsm, phi_minimal, h);
 
 		for (int case_ind = 0; case_ind < h.num_cases; case_ind++) {
-			av_phi_trace(i, case_ind) = s.first[case_ind];
-			av_h_trace(i, case_ind) = s.second[case_ind];
+			av_phi_trace(i, case_ind) = s[case_ind];
 		}
 	}
 
-	return List::create(
-		Named("phi") = av_phi_trace,
-		Named("h") = av_h_trace
-	);
+	return av_phi_trace;
 END_RCPP
 }
 
@@ -152,6 +143,7 @@ RcppExport SEXP R_sim_reg(
 	SEXP R_its,
 	SEXP R_thin,
 	SEXP R_record_x,
+	SEXP R_record_model_likelihoods,
 	SEXP R_ttsm,
 	SEXP R_term_ids,
 	SEXP R_case_ids,
@@ -213,7 +205,6 @@ RcppExport SEXP R_sim_reg(
 	SEXP R_fix_phi,
 	SEXP R_joint_proposal,
 	SEXP R_H,
-	SEXP R_target_range,
 	SEXP R_adapt_block_size,
 	SEXP R_max_tuning_batches,
 	SEXP R_repeats
@@ -230,6 +221,7 @@ BEGIN_RCPP
 	NumericMatrix ttsm(R_ttsm);
 
 	bool record_x = as<bool>(R_record_x);
+	bool record_model_likelihoods = as<bool>(R_record_model_likelihoods);
 
 	IntegerVector term_ids(R_term_ids);
 	IntegerVector case_ids(R_case_ids);
@@ -370,7 +362,7 @@ BEGIN_RCPP
 		ttsm
 	);
 
-	NumericVector target_range(R_target_range);
+	NumericVector target_range = NumericVector::create(0.3, 0.7);
 	int adapt_block_size = as<int>(R_adapt_block_size);
 	int max_tuning_batches = as<int>(R_max_tuning_batches);
 
@@ -389,9 +381,7 @@ BEGIN_RCPP
 					d,
 					row_is_column_anc,
 					ttsm,
-					fix_phi,
-					true,
-					false
+					fix_phi
 				);
 				if (cur_state.gamma) batch_mpg += (double)1/(double)adapt_block_size;
 			}
@@ -421,8 +411,7 @@ BEGIN_RCPP
 		1.0,
 		record_x,
 		fix_phi,
-		true,
-		false	
+		record_model_likelihoods
 	);
 
 	return result;

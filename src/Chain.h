@@ -23,8 +23,7 @@ List Chain(
 	double temperature,
 	bool record_x,
 	bool fix_phi,
-	bool reparameterise,
-	bool quantile_normalise
+	bool record_model_likelhoods
 );
 
 #endif

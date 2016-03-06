@@ -5,27 +5,31 @@
 \title{Similarity regression}
 \usage{
 sim_reg(ontology = NULL, y, x = NULL, g = rep(0, length(y)),
-  its = 10000, thin = 1, record_sims = FALSE,
-  information_content = get_term_info_content(ontology, term_sets = x),
-  term_sim_mat = prune_sim_mat(ontology = ontology, get_term_sim_mat(ontology
-  = ontology, information_content = information_content)),
+  its = 20000, thin = 1, record_sims = FALSE,
+  record_model_likelihoods = FALSE, tune_proposals = TRUE,
+  verbose = FALSE, information_content = get_term_info_content(ontology,
+  term_sets = x),
   term_descendancy_matrix = get_term_descendancy_matrix(ontology,
-  colnames(term_sim_mat)), case_ids = unlist(mapply(SIMPLIFY = FALSE, FUN =
+  names(information_content)), term_sim_mat = prune_sim_mat(ontology,
+  get_term_sim_mat(ontology, information_content, term_descendancy_matrix =
+  term_descendancy_matrix)), case_ids = unlist(mapply(SIMPLIFY = FALSE, FUN =
   rep, 0:(length(x) - 1), sapply(x, length))),
   term_ids = as.integer(match(unlist(x), colnames(term_descendancy_matrix))) -
-  1, return_tuning_runs = FALSE, tuning_its = 10000, tuning_burn = 1000,
-  burn = 2000, gamma = (runif(1) < gamma_prior_prob), alpha_star = rnorm(n
-  = 1, mean = alpha_star_mean, sd = alpha_star_sd), alpha = rnorm(n = 1, mean
-  = alpha_mean, sd = alpha_sd), log_beta = rnorm(n = 1, mean = log_beta_mean,
-  sd = log_beta_sd), phi = sample.int(n = ncol(term_descendancy_matrix), size
-  = 3, replace = TRUE) - 1, logit_mean_f = rnorm(n = 1, mean =
-  logit_mean_f_mean, sd = logit_mean_f_sd), log_alpha_plus_beta_f = rnorm(n =
-  1, mean = log_alpha_plus_beta_f_mean, sd = log_alpha_plus_beta_f_sd),
-  logit_mean_g = rnorm(n = 1, mean = logit_mean_g_mean, sd = logit_mean_g_sd),
-  log_alpha_plus_beta_g = rnorm(n = 1, mean = log_alpha_plus_beta_g_mean, sd =
-  log_alpha_plus_beta_g_sd), gamma_prior_prob = 0.05, alpha_star_mean = 0,
-  alpha_mean = 0, alpha_star_sd = 5, alpha_sd = 5, log_beta_mean = 2,
-  log_beta_sd = 1, logit_mean_f_mean = 1, logit_mean_f_sd = 1,
+  1, return_tuning_runs = FALSE, tuning_its = its,
+  tuning_burn = as.integer(tuning_its/5), burn = as.integer(its/5),
+  tune_phi_pseudoprior = TRUE, gamma = (runif(1) < gamma_prior_prob),
+  alpha_star = rnorm(n = 1, mean = alpha_star_mean, sd = alpha_star_sd),
+  alpha = rnorm(n = 1, mean = alpha_mean, sd = alpha_sd), log_beta = rnorm(n
+  = 1, mean = log_beta_mean, sd = log_beta_sd), phi = sample.int(n =
+  ncol(term_descendancy_matrix), size = 3, replace = TRUE) - 1,
+  logit_mean_f = rnorm(n = 1, mean = logit_mean_f_mean, sd = logit_mean_f_sd),
+  log_alpha_plus_beta_f = rnorm(n = 1, mean = log_alpha_plus_beta_f_mean, sd =
+  log_alpha_plus_beta_f_sd), logit_mean_g = rnorm(n = 1, mean =
+  logit_mean_g_mean, sd = logit_mean_g_sd), log_alpha_plus_beta_g = rnorm(n =
+  1, mean = log_alpha_plus_beta_g_mean, sd = log_alpha_plus_beta_g_sd),
+  gamma_prior_prob = 0.05, alpha_star_mean = 0, alpha_mean = 0,
+  alpha_star_sd = 5, alpha_sd = 5, log_beta_mean = 2, log_beta_sd = 1,
+  logit_mean_f_mean = 1, logit_mean_f_sd = 1,
   log_alpha_plus_beta_f_mean = 2, log_alpha_plus_beta_f_sd = 1,
   logit_mean_g_mean = 0, logit_mean_g_sd = 1.5,
   log_alpha_plus_beta_g_mean = 2, log_alpha_plus_beta_g_sd = 1,
@@ -36,18 +40,16 @@ sim_reg(ontology = NULL, y, x = NULL, g = rep(0, length(y)),
   phi_jumps = c(0:(ncol(term_descendancy_matrix) - 1),
   rep(match(unlist(lapply(x[y], get_ancestors, ontology = ontology)),
   colnames(term_descendancy_matrix)) - 1, 50)),
-  pseudo_phi_marginal_prior = c(0:(ncol(term_descendancy_matrix) - 1),
-  rep(match(unlist(lapply(x[y], get_ancestors, ontology = ontology)),
-  colnames(term_descendancy_matrix)) - 1, 50)),
-  phi_num_leaves_geometric_rate = 1, lit_sims = setNames(rep(1,
-  ncol(term_descendancy_matrix)), colnames(term_sim_mat)))
+  pseudo_phi_marginal_prior = phi_jumps, phi_num_leaves_geometric_rate = 1,
+  lit_sims = setNames(rep(1, ncol(term_sim_mat)), colnames(term_sim_mat)),
+  favour_gamma1_factor = 1, check_args = TRUE)
 }
 \arguments{
 \item{ontology}{\code{ontology_index} object.}
 
-\item{y}{Logical vector of genotypes (typically 1 for rare genotype, 0 for common genotype).}
+\item{y}{Logical vector of genotypes (typically TRUE for rare genotype, FALSE for common genotype).}
 
-\item{x}{List of character vectors of terms IDs,}
+\item{x}{List of character vectors of terms IDs.}
 
 \item{g}{Genotype log odds offset per individual.}
 
@@ -57,11 +59,17 @@ sim_reg(ontology = NULL, y, x = NULL, g = rep(0, length(y)),
 
 \item{record_sims}{Logical indicating whether to record trace of similarities.}
 
+\item{record_model_likelihoods}{Record likelihood of parameters under both models.}
+
+\item{tune_proposals}{Logical value determining whether to adaptively tune proposal variances for \code{sim_reg} numeric parameters.}
+
+\item{verbose}{Logical value determining whether to print progress of execution.}
+
 \item{information_content}{Numeric vector, named by HPO IDs, containing the information content of corresponding terms.}
 
-\item{term_sim_mat}{The `term-term' similarity matrix, a numeric matrix whose dimensions are named by the terms so that cell i,j contains the similarity of term i to term j.}
+\item{term_descendancy_matrix}{Logical term descendancy matrix, dimensions symmetrically labelled by terms, and where by a cell value of TRUE indicates that the row is the ancestor of the column term (in the sense of the DAG structure of the HPO.}
 
-\item{term_descendancy_matrix}{Logical matrix, whose dimensions are named by HPO term IDs so that cell i,j is TRUE if i is an ancestor term of j.}
+\item{term_sim_mat}{Numeric matrix with rows and columns corresponding to (and named by) term IDs, and cells containing the similarity between the row and column term}
 
 \item{case_ids}{IDs for the N cases from 0 to N-1, indicating which case terms in \code{term_ids} belong to (automatically determined given x).}
 
@@ -74,6 +82,8 @@ sim_reg(ontology = NULL, y, x = NULL, g = rep(0, length(y)),
 \item{tuning_burn}{Number of update cycles to discard in tuning phase.}
 
 \item{burn}{Number of update cycles to discard .}
+
+\item{tune_phi_pseudoprior}{Logical value determining whether tuned pseudoprior for phi is used in main Markov chain.}
 
 \item{gamma}{Initial value of model selection indicator gamma..}
 
@@ -144,12 +154,16 @@ sim_reg(ontology = NULL, y, x = NULL, g = rep(0, length(y)),
 \item{phi_num_leaves_geometric_rate}{Geometric parameter for truncated geometric distribution on number of leaf terms in phi.}
 
 \item{lit_sims}{Numeric vector of similarities (greater than 0) of literature phenotype to individual terms (named by term ID).}
+
+\item{favour_gamma1_factor}{Value by which to multiply odds of \code{P(gamma=1)/P(gamma=0)} in order to encourage better mixing and higher accuracy for a given number of iterations. Defaults to 1.}
+
+\item{check_args}{Logical value determining whether arguments are checked for consistency.}
 }
 \value{
 List (by parameter) of vectors of consecutive parameter samples from MCMC inference.
 }
 \description{
-Performins Bayesian `similarity regression' on given binary genotype \code{y} (logical vector) against ontological term sets \code{x} (list of character vectors of term IDs). This could, for example, be a \code{list} of character vectors of HPO term IDs representing case phenotypes. It returns a list of traces for the sampled parameters. Of particular interest are the estimated mean posteriors of \code{gamma} (the model selection indicator, thus giving an estimate of the probability of an association under the model assumptions - stored in the `mean_posterior_gamma' slot in the result, i.e. \code{result$mean_posterior_gamma} (which can also be calculated \code{mean(result$gamma)}), and the characteristic ontological profile phi (which can be visualised by the functions \code{\link{phi_plot}}, \code{\link{term_pair_marginals_plot}}, and \code{\link{term_marginals}}).
+Performns Bayesian `similarity regression' on given binary genotype \code{y} (logical vector) against ontological term sets \code{x} (list of character vectors of term IDs). This could, for example, be a \code{list} of character vectors of HPO term IDs representing case phenotypes. It returns an object of class `sim_reg_samples` which is a list of traces for the sampled parameters. The results can be summarised with `summary`. Of particular interest are the estimated mean posteriors of \code{gamma} (the model selection indicator, thus giving an estimate of the probability of an association under the model assumptions - stored in the `mean_posterior_gamma' slot in the result, i.e. \code{result$mean_posterior_gamma} (which can also be calculated \code{mean(result$gamma)}), and the characteristic ontological profile phi (which can be visualised by the functions \code{\link{phi_plot}}, \code{\link{term_pair_marginals_plot}}, and \code{\link{term_marginals}}).
 }
 \examples{
 \dontrun{

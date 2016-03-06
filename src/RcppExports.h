@@ -10,6 +10,8 @@
 using namespace Rcpp;
 using namespace std;
 
+typedef NumericVector (*similarity_function)(NumericMatrix,IntegerVector,term_list);
+
 RcppExport SEXP leaf_matrix(
 	SEXP R_row_is_column_anc,
 	SEXP R_terms_matrix
@@ -32,20 +34,21 @@ RcppExport SEXP R_log_odds_trace(
 	SEXP R_log_alpha_plus_beta_g
 );
 
-RcppExport SEXP R_get_each_way_sim(
+RcppExport SEXP R_asym_sim_func(
 	SEXP R_ttsm,
 	SEXP R_row_is_column_anc,
 	SEXP R_num_cases,
 	SEXP R_term_ids,
 	SEXP R_case_ids,
 	SEXP R_phi,
-	SEXP R_quantile_normalise
+	SEXP R_average_across_phi
 );
 
 RcppExport SEXP R_sim_reg(
 	SEXP R_its,
 	SEXP R_thin,
 	SEXP R_record_x,
+	SEXP R_record_model_likelihoods,
 	SEXP R_ttsm,
 	SEXP R_term_ids,
 	SEXP R_case_ids,
@@ -107,7 +110,6 @@ RcppExport SEXP R_sim_reg(
 	SEXP R_fix_phi,
 	SEXP R_joint_proposal,
 	SEXP R_H,
-	SEXP R_target_range,
 	SEXP R_adapt_block_size,
 	SEXP R_max_tuning_batches,
 	SEXP R_repeats

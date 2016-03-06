@@ -16,8 +16,7 @@ List Chain(
 	double temperature = 1.0,
 	bool record_x = false,
 	bool fix_phi = false,
-	bool reparameterise = false,
-	bool quantile_normalise = false
+	bool record_model_likelihoods = false
 ) {
 
 	int recorded_iterations = (iterations - 1)/thin + 1;
@@ -34,15 +33,24 @@ List Chain(
 
 	NumericMatrix x_trace;
 	NumericMatrix s_phi_trace;
-	NumericMatrix s_h_trace;
+	NumericMatrix s_x_trace;
+	NumericVector g0_likelihood;
+	NumericVector g1_likelihood;
 
 	if (record_x) {
 		NumericMatrix _x_trace(recorded_iterations, d.h.num_cases);
 		NumericMatrix _s_phi_trace(recorded_iterations, d.h.num_cases);
-		NumericMatrix _s_h_trace(recorded_iterations, d.h.num_cases);
+		NumericMatrix _s_x_trace(recorded_iterations, d.h.num_cases);
 		x_trace = _x_trace;
 		s_phi_trace = _s_phi_trace;
-		s_h_trace = _s_h_trace;
+		s_x_trace = _s_x_trace;
+	}
+
+	if (record_model_likelihoods) {
+		NumericVector _g0_likelihood(recorded_iterations);
+		NumericVector _g1_likelihood(recorded_iterations);
+		g0_likelihood = _g0_likelihood;
+		g1_likelihood = _g1_likelihood;
 	}
 
 	NumericVector gamma_lik_trace(recorded_iterations);
@@ -55,6 +63,7 @@ List Chain(
 	NumericVector logit_mean_g_lik_trace(recorded_iterations);
 	NumericVector log_alpha_plus_beta_g_lik_trace(recorded_iterations);
 	NumericVector y_lik_trace(recorded_iterations);
+	NumericVector iteration(recorded_iterations);
 
 	for (int i = 0; i < iterations; i++) {
 		updater.update(
@@ -64,14 +73,14 @@ List Chain(
 			d,
 			row_is_column_anc,
 			ttsm,
-			fix_phi,
-			reparameterise,
-			quantile_normalise
+			fix_phi
 		);
 
 		if (i % thin == 0) {
 			int recording_it = i / thin;
-			likelihood_trace[recording_it] = cur_state.get_total_lik(row_is_column_anc, ttsm, likelihood, d, temperature, reparameterise, quantile_normalise);
+			iteration[recording_it] = i;
+
+			likelihood_trace[recording_it] = cur_state.get_total_lik(row_is_column_anc, ttsm, likelihood, d, temperature);
 			gamma_trace[recording_it] = cur_state.gamma;
 			alpha_trace[recording_it] = cur_state.alpha;
 			log_beta_trace[recording_it] = cur_state.log_beta;
@@ -83,11 +92,42 @@ List Chain(
 			for (int j = 0; j < phi_size; j++)
 				phi_trace(recording_it, j) = cur_state.phi[j];
 
+			if (record_model_likelihoods) {
+				g0_likelihood[recording_it] = likelihood.get_total_lik(
+					d.y,
+					cur_state._x,
+					d.g,
+					cur_state.alpha_star,
+					cur_state.alpha,
+					cur_state.log_beta,
+					cur_state.logit_mean_f,
+					cur_state.log_alpha_plus_beta_f,
+					cur_state.logit_mean_g,
+					cur_state.log_alpha_plus_beta_g,
+					cur_state.phi,
+					false
+				);
+				g1_likelihood[recording_it] = likelihood.get_total_lik(
+					d.y,
+					cur_state._x,
+					d.g,
+					cur_state.alpha_star,
+					cur_state.alpha,
+					cur_state.log_beta,
+					cur_state.logit_mean_f,
+					cur_state.log_alpha_plus_beta_f,
+					cur_state.logit_mean_g,
+					cur_state.log_alpha_plus_beta_g,
+					cur_state.phi,
+					true	
+				);
+			}
+
 			if (record_x) {
 				for (int j = 0; j < d.h.num_cases; j++) {
 					x_trace(recording_it, j) = cur_state._x[j];
 					s_phi_trace(recording_it, j) = cur_state._s.first[j];
-					s_h_trace(recording_it, j) = cur_state._s.second[j];
+					s_x_trace(recording_it, j) = cur_state._s.second[j];
 				}
 			}
 
@@ -102,22 +142,24 @@ List Chain(
 			log_alpha_plus_beta_g_lik_trace[recording_it] = cur_state.cur_log_alpha_plus_beta_g_lik;
 			y_lik_trace[recording_it] = cur_state.cur_y_lik;
 		}
-			
 	}
 
 	return List::create(
-		Named("liks") = List::create(
-			Named("likelihood") = likelihood_trace,
-			Named("gamma") = gamma_lik_trace,
-			Named("alpha_star") = alpha_star_lik_trace,
-			Named("alpha") = alpha_lik_trace,
-			Named("log_beta") = log_beta_lik_trace,
-			Named("phi") = phi_lik_trace,
-			Named("logit_mean_f") = logit_mean_f_lik_trace,
-			Named("log_alpha_plus_beta_f") = log_alpha_plus_beta_f_lik_trace,
-			Named("logit_mean_g") = logit_mean_g_lik_trace,
-			Named("log_alpha_plus_beta_g") = log_alpha_plus_beta_g_lik_trace,
-			Named("y") = y_lik_trace
+		Named("iteration") = iteration,
+		Named("likelihoods") = List::create(
+			Named("total_gamma0_likelihood") = g0_likelihood,
+			Named("total_gamma1_likelihood") = g1_likelihood,
+			Named("total_likelihood") = likelihood_trace,
+			Named("gamma_likelihood") = gamma_lik_trace,
+			Named("alpha_star_likelihood") = alpha_star_lik_trace,
+			Named("alpha_likelihood") = alpha_lik_trace,
+			Named("log_beta_likelihood") = log_beta_lik_trace,
+			Named("phi_likelihood") = phi_lik_trace,
+			Named("logit_mean_f_likelihood") = logit_mean_f_lik_trace,
+			Named("log_alpha_plus_beta_f_likelihood") = log_alpha_plus_beta_f_lik_trace,
+			Named("logit_mean_g_likelihood") = logit_mean_g_lik_trace,
+			Named("log_alpha_plus_beta_g_likelihood") = log_alpha_plus_beta_g_lik_trace,
+			Named("y_likelihood") = y_lik_trace
 		),
 		Named("alpha_star") = alpha_star_trace,
 		Named("alpha") = alpha_trace,
@@ -126,19 +168,12 @@ List Chain(
 		Named("log_alpha_plus_beta_f") = log_alpha_plus_beta_f_trace,
 		Named("logit_mean_g") = logit_mean_g_trace,
 		Named("log_alpha_plus_beta_g") = log_alpha_plus_beta_g_trace,
-		Named("phi") = phi_trace,
-		Named("x") = x_trace,
+		Named("phi_vector") = phi_trace,
+		Named("s") = x_trace,
 		Named("s_phi") = s_phi_trace,
-		Named("s_h") = s_h_trace,
-		Named("gamma") = gamma_trace,
-		Named("alpha_star_lik") = alpha_star_lik_trace,
-		Named("log_beta_lik") = log_beta_lik_trace,
-		Named("phi_lik") = phi_lik_trace,
-		Named("logit_mean_f_lik") = logit_mean_f_lik_trace,
-		Named("y_lik") = y_lik_trace,
-		Named("H") = likelihood.H
+		Named("s_x") = s_x_trace,
+		Named("gamma") = gamma_trace
 	);
-
 }
 
 

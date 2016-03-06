@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+<meta name="author" content="Daniel Greene" />
+
+<meta name="date" content="2016-03-06" />
+
+<title>Prior phenotypic information</title>
+
+
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; }
+code > span.dt { color: #902000; }
+code > span.dv { color: #40a070; }
+code > span.bn { color: #40a070; }
+code > span.fl { color: #40a070; }
+code > span.ch { color: #4070a0; }
+code > span.st { color: #4070a0; }
+code > span.co { color: #60a0b0; font-style: italic; }
+code > span.ot { color: #007020; }
+code > span.al { color: #ff0000; font-weight: bold; }
+code > span.fu { color: #06287e; }
+code > span.er { color: #ff0000; font-weight: bold; }
+</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+
+
+<link href="data:text/css,body%20%7B%0A%20%20background%2Dcolor%3A%20%23fff%3B%0A%20%20margin%3A%201em%20auto%3B%0A%20%20max%2Dwidth%3A%20700px%3B%0A%20%20overflow%3A%20visible%3B%0A%20%20padding%2Dleft%3A%202em%3B%0A%20%20padding%2Dright%3A%202em%3B%0A%20%20font%2Dfamily%3A%20%22Open%20Sans%22%2C%20%22Helvetica%20Neue%22%2C%20Helvetica%2C%20Arial%2C%20sans%2Dserif%3B%0A%20%20font%2Dsize%3A%2014px%3B%0A%20%20line%2Dheight%3A%201%2E35%3B%0A%7D%0A%0A%23header%20%7B%0A%20%20text%2Dalign%3A%20center%3B%0A%7D%0A%0A%23TOC%20%7B%0A%20%20clear%3A%20both%3B%0A%20%20margin%3A%200%200%2010px%2010px%3B%0A%20%20padding%3A%204px%3B%0A%20%20width%3A%20400px%3B%0A%20%20border%3A%201px%20solid%20%23CCCCCC%3B%0A%20%20border%2Dradius%3A%205px%3B%0A%0A%20%20background%2Dcolor%3A%20%23f6f6f6%3B%0A%20%20font%2Dsize%3A%2013px%3B%0A%20%20line%2Dheight%3A%201%2E3%3B%0A%7D%0A%20%20%23TOC%20%2Etoctitle%20%7B%0A%20%20%20%20font%2Dweight%3A%20bold%3B%0A%20%20%20%20font%2Dsize%3A%2015px%3B%0A%20%20%20%20margin%2Dleft%3A%205px%3B%0A%20%20%7D%0A%0A%20%20%23TOC%20ul%20%7B%0A%20%20%20%20padding%2Dleft%3A%2040px%3B%0A%20%20%20%20margin%2Dleft%3A%20%2D1%2E5em%3B%0A%20%20%20%20margin%2Dtop%3A%205px%3B%0A%20%20%20%20margin%2Dbottom%3A%205px%3B%0A%20%20%7D%0A%20%20%23TOC%20ul%20ul%20%7B%0A%20%20%20%20margin%2Dleft%3A%20%2D2em%3B%0A%20%20%7D%0A%20%20%23TOC%20li%20%7B%0A%20%20%20%20line%2Dheight%3A%2016px%3B%0A%20%20%7D%0A%0Atable%20%7B%0A%20%20margin%3A%201em%20auto%3B%0A%20%20border%2Dwidth%3A%201px%3B%0A%20%20border%2Dcolor%3A%20%23DDDDDD%3B%0A%20%20border%2Dstyle%3A%20outset%3B%0A%20%20border%2Dcollapse%3A%20collapse%3B%0A%7D%0Atable%20th%20%7B%0A%20%20border%2Dwidth%3A%202px%3B%0A%20%20padding%3A%205px%3B%0A%20%20border%2Dstyle%3A%20inset%3B%0A%7D%0Atable%20td%20%7B%0A%20%20border%2Dwidth%3A%201px%3B%0A%20%20border%2Dstyle%3A%20inset%3B%0A%20%20line%2Dheight%3A%2018px%3B%0A%20%20padding%3A%205px%205px%3B%0A%7D%0Atable%2C%20table%20th%2C%20table%20td%20%7B%0A%20%20border%2Dleft%2Dstyle%3A%20none%3B%0A%20%20border%2Dright%2Dstyle%3A%20none%3B%0A%7D%0Atable%20thead%2C%20table%20tr%2Eeven%20%7B%0A%20%20background%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0A%0Ap%20%7B%0A%20%20margin%3A%200%2E5em%200%3B%0A%7D%0A%0Ablockquote%20%7B%0A%20%20background%2Dcolor%3A%20%23f6f6f6%3B%0A%20%20padding%3A%200%2E25em%200%2E75em%3B%0A%7D%0A%0Ahr%20%7B%0A%20%20border%2Dstyle%3A%20solid%3B%0A%20%20border%3A%20none%3B%0A%20%20border%2Dtop%3A%201px%20solid%20%23777%3B%0A%20%20margin%3A%2028px%200%3B%0A%7D%0A%0Adl%20%7B%0A%20%20margin%2Dleft%3A%200%3B%0A%7D%0A%20%20dl%20dd%20%7B%0A%20%20%20%20margin%2Dbottom%3A%2013px%3B%0A%20%20%20%20margin%2Dleft%3A%2013px%3B%0A%20%20%7D%0A%20%20dl%20dt%20%7B%0A%20%20%20%20font%2Dweight%3A%20bold%3B%0A%20%20%7D%0A%0Aul%20%7B%0A%20%20margin%2Dtop%3A%200%3B%0A%7D%0A%20%20ul%20li%20%7B%0A%20%20%20%20list%2Dstyle%3A%20circle%20outside%3B%0A%20%20%7D%0A%20%20ul%20ul%20%7B%0A%20%20%20%20margin%2Dbottom%3A%200%3B%0A%20%20%7D%0A%0Apre%2C%20code%20%7B%0A%20%20background%2Dcolor%3A%20%23f7f7f7%3B%0A%20%20border%2Dradius%3A%203px%3B%0A%20%20color%3A%20%23333%3B%0A%7D%0Apre%20%7B%0A%20%20white%2Dspace%3A%20pre%2Dwrap%3B%20%20%20%20%2F%2A%20Wrap%20long%20lines%20%2A%2F%0A%20%20border%2Dradius%3A%203px%3B%0A%20%20margin%3A%205px%200px%2010px%200px%3B%0A%20%20padding%3A%2010px%3B%0A%7D%0Apre%3Anot%28%5Bclass%5D%29%20%7B%0A%20%20background%2Dcolor%3A%20%23f7f7f7%3B%0A%7D%0A%0Acode%20%7B%0A%20%20font%2Dfamily%3A%20Consolas%2C%20Monaco%2C%20%27Courier%20New%27%2C%20monospace%3B%0A%20%20font%2Dsize%3A%2085%25%3B%0A%7D%0Ap%20%3E%20code%2C%20li%20%3E%20code%20%7B%0A%20%20padding%3A%202px%200px%3B%0A%7D%0A%0Adiv%2Efigure%20%7B%0A%20%20text%2Dalign%3A%20center%3B%0A%7D%0Aimg%20%7B%0A%20%20background%2Dcolor%3A%20%23FFFFFF%3B%0A%20%20padding%3A%202px%3B%0A%20%20border%3A%201px%20solid%20%23DDDDDD%3B%0A%20%20border%2Dradius%3A%203px%3B%0A%20%20border%3A%201px%20solid%20%23CCCCCC%3B%0A%20%20margin%3A%200%205px%3B%0A%7D%0A%0Ah1%20%7B%0A%20%20margin%2Dtop%3A%200%3B%0A%20%20font%2Dsize%3A%2035px%3B%0A%20%20line%2Dheight%3A%2040px%3B%0A%7D%0A%0Ah2%20%7B%0A%20%20border%2Dbottom%3A%204px%20solid%20%23f7f7f7%3B%0A%20%20padding%2Dtop%3A%2010px%3B%0A%20%20padding%2Dbottom%3A%202px%3B%0A%20%20font%2Dsize%3A%20145%25%3B%0A%7D%0A%0Ah3%20%7B%0A%20%20border%2Dbottom%3A%202px%20solid%20%23f7f7f7%3B%0A%20%20padding%2Dtop%3A%2010px%3B%0A%20%20font%2Dsize%3A%20120%25%3B%0A%7D%0A%0Ah4%20%7B%0A%20%20border%2Dbottom%3A%201px%20solid%20%23f7f7f7%3B%0A%20%20margin%2Dleft%3A%208px%3B%0A%20%20font%2Dsize%3A%20105%25%3B%0A%7D%0A%0Ah5%2C%20h6%20%7B%0A%20%20border%2Dbottom%3A%201px%20solid%20%23ccc%3B%0A%20%20font%2Dsize%3A%20105%25%3B%0A%7D%0A%0Aa%20%7B%0A%20%20color%3A%20%230033dd%3B%0A%20%20text%2Ddecoration%3A%20none%3B%0A%7D%0A%20%20a%3Ahover%20%7B%0A%20%20%20%20color%3A%20%236666ff%3B%20%7D%0A%20%20a%3Avisited%20%7B%0A%20%20%20%20color%3A%20%23800080%3B%20%7D%0A%20%20a%3Avisited%3Ahover%20%7B%0A%20%20%20%20color%3A%20%23BB00BB%3B%20%7D%0A%20%20a%5Bhref%5E%3D%22http%3A%22%5D%20%7B%0A%20%20%20%20text%2Ddecoration%3A%20underline%3B%20%7D%0A%20%20a%5Bhref%5E%3D%22https%3A%22%5D%20%7B%0A%20%20%20%20text%2Ddecoration%3A%20underline%3B%20%7D%0A%0A%2F%2A%20Class%20described%20in%20https%3A%2F%2Fbenjeffrey%2Ecom%2Fposts%2Fpandoc%2Dsyntax%2Dhighlighting%2Dcss%0A%20%20%20Colours%20from%20https%3A%2F%2Fgist%2Egithub%2Ecom%2Frobsimmons%2F1172277%20%2A%2F%0A%0Acode%20%3E%20span%2Ekw%20%7B%20color%3A%20%23555%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%2F%2A%20Keyword%20%2A%2F%0Acode%20%3E%20span%2Edt%20%7B%20color%3A%20%23902000%3B%20%7D%20%2F%2A%20DataType%20%2A%2F%0Acode%20%3E%20span%2Edv%20%7B%20color%3A%20%2340a070%3B%20%7D%20%2F%2A%20DecVal%20%28decimal%20values%29%20%2A%2F%0Acode%20%3E%20span%2Ebn%20%7B%20color%3A%20%23d14%3B%20%7D%20%2F%2A%20BaseN%20%2A%2F%0Acode%20%3E%20span%2Efl%20%7B%20color%3A%20%23d14%3B%20%7D%20%2F%2A%20Float%20%2A%2F%0Acode%20%3E%20span%2Ech%20%7B%20color%3A%20%23d14%3B%20%7D%20%2F%2A%20Char%20%2A%2F%0Acode%20%3E%20span%2Est%20%7B%20color%3A%20%23d14%3B%20%7D%20%2F%2A%20String%20%2A%2F%0Acode%20%3E%20span%2Eco%20%7B%20color%3A%20%23888888%3B%20font%2Dstyle%3A%20italic%3B%20%7D%20%2F%2A%20Comment%20%2A%2F%0Acode%20%3E%20span%2Eot%20%7B%20color%3A%20%23007020%3B%20%7D%20%2F%2A%20OtherToken%20%2A%2F%0Acode%20%3E%20span%2Eal%20%7B%20color%3A%20%23ff0000%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%2F%2A%20AlertToken%20%2A%2F%0Acode%20%3E%20span%2Efu%20%7B%20color%3A%20%23900%3B%20font%2Dweight%3A%20bold%3B%20%7D%20%2F%2A%20Function%20calls%20%2A%2F%20%0Acode%20%3E%20span%2Eer%20%7B%20color%3A%20%23a61717%3B%20background%2Dcolor%3A%20%23e3d2d2%3B%20%7D%20%2F%2A%20ErrorTok%20%2A%2F%0A%0A" rel="stylesheet" type="text/css" />
+
+</head>
+
+<body>
+
+
+
+<div id="header">
+<h1 class="title">Prior phenotypic information</h1>
+<h4 class="author"><em>Daniel Greene</em></h4>
+<h4 class="date"><em>2016-03-06</em></h4>
+</div>
+
+
+<p>The <code>sim_reg</code> function uses MCMC to sample parameters from the ‘Phenotype similarity regression’ model conditional on supplied binary genotypes and ontological term sets.</p>
+<p>The vignette ‘Similarity Regression - Introduction’ shows a simple application based on simulated data. This vignette demonstrates how to include prior phenotypic information in the inference. The information is supplied to the inference procedure as a parameter called <code>lit_sims</code> and should be a numeric vector of relative weights for terms included in the sample space of <code>phi</code> (by default the set of all terms present amongst the terms in <code>x</code> and their ancestors). Terms not specified in this vector default to having a weight of 1.</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(ontologyIndex)
+<span class="kw">library</span>(ontologySimilarity)
+<span class="kw">library</span>(SimReg)
+<span class="kw">data</span>(hpo)
+<span class="kw">set.seed</span>(<span class="dv">1</span>)
+terms &lt;-<span class="st"> </span><span class="kw">get_ancestors</span>(hpo, <span class="kw">c</span>(hpo$id[<span class="kw">match</span>(<span class="kw">c</span>(<span class="st">&quot;Abnormality of thrombocytes&quot;</span>,<span class="st">&quot;Hearing abnormality&quot;</span>), 
+    hpo$name)], <span class="kw">sample</span>(hpo$id, <span class="dt">size=</span><span class="dv">50</span>)))</code></pre>
+<p>To help illustrate the ideas, we’ll consider a scenario where there is some evidence for an association between a phenotype - which in this example we’ll set as ‘Hearing abnormality’ - and a binary genotype, and where there is also a prior expectation that the ‘characteristic phenotype’ of the genotype would involve hearing abnormality. For instance, the genotype might depend on variants in a gene orthologous to one known to harbour ‘Hearing abnormality’ variants in a model organism. We apply the inference procedure to the data with and without the prior and observe the effect on the inferred ‘probability of association’, <code>gamma</code>.</p>
+<pre class="sourceCode r"><code class="sourceCode r">hearing_abnormality &lt;-<span class="st"> </span>hpo$id[<span class="kw">match</span>(<span class="st">&quot;Hearing abnormality&quot;</span>, hpo$name)]
+genotypes &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="ot">TRUE</span>, <span class="dv">3</span>), <span class="kw">rep</span>(<span class="ot">FALSE</span>, <span class="dv">97</span>))
+
+<span class="co">#give all subjects 5 random terms and add 'hearing abnormality' for those with y_i=TRUE</span>
+phenotypes &lt;-<span class="st"> </span><span class="kw">lapply</span>(genotypes, function(y_i) <span class="kw">minimal_set</span>(hpo, <span class="kw">c</span>(
+if (y_i) hearing_abnormality else <span class="kw">character</span>(<span class="dv">0</span>), <span class="kw">sample</span>(terms, <span class="dt">size=</span><span class="dv">5</span>))))</code></pre>
+<p>So there are three cases with the rare variant (i.e. having y_i = TRUE) and all of them have the ‘Hearing abnormality’ HPO term.</p>
+<p>An application of <code>sim_reg</code> yields:</p>
+<pre class="sourceCode r"><code class="sourceCode r">samples &lt;-<span class="st"> </span><span class="kw">sim_reg</span>(<span class="dt">ontology=</span>hpo, <span class="dt">x=</span>phenotypes, <span class="dt">y=</span>genotypes)
+<span class="kw">print</span>(<span class="kw">summary</span>(samples), <span class="dt">ontology=</span>hpo)</code></pre>
+<pre><code>## --------------------------------------------------------------------------- 
+## P(gamma=1|y) =  0.1038125 
+## --------------------------------------------------------------------------- 
+## Numeric parameters:
+##              Parameter  Mean   SD
+##                  alpha -5.61 2.05
+##               log_beta  2.83 0.97
+##           logit_mean_f  0.38 0.89
+##  log_alpha_plus_beta_f  2.10 0.97
+##           logit_mean_g -1.31 1.42
+##  log_alpha_plus_beta_g  1.91 1.05
+## --------------------------------------------------------------------------- 
+## Phi:
+##           t                                                 Name    P
+##  HP:0000598                               Abnormality of the ear 0.43
+##  HP:0000364                                  Hearing abnormality 0.39
+##  HP:0002817                        Abnormality of the upper limb 0.10
+##  HP:0040068                             Abnormality of limb bone 0.08
+##  HP:0003308                                 Cervical subluxation 0.08
+##  HP:0012387                                           Bronchitis 0.07
+##  HP:0000925                  Abnormality of the vertebral column 0.07
+##  HP:0000164                             Abnormality of the teeth 0.07
+##  HP:0011030 Abnormality of transition element cation homeostasis 0.05
+##  HP:0011842                   Abnormality of skeletal morphology 0.04
+## ---------------------------------------------------------------------------</code></pre>
+<p>We now consider constructing the <code>lit_sims</code> parameter to capture our knowledge about the gene from the model organism. We can either explicitly create the <code>lit_sims</code> vector of prior weights, i.e. by assigning higher weights to terms which involve some kind of hearing problem. For example, we could set the prior weight of all terms which have the word ‘hearing’ in to ten times that of terms which don’t.</p>
+<pre class="sourceCode r"><code class="sourceCode r">lit_sims &lt;-<span class="st"> </span><span class="kw">ifelse</span>(<span class="kw">grepl</span>(<span class="dt">x=</span>hpo$name, <span class="dt">ignore=</span><span class="ot">TRUE</span>, <span class="dt">pattern=</span><span class="st">&quot;hearing&quot;</span>), <span class="dv">10</span>, <span class="dv">1</span>)
+<span class="kw">names</span>(lit_sims) &lt;-<span class="st"> </span>hpo$name</code></pre>
+<p>Note: one must set the <code>names</code> of the <code>lit_sims</code> vector, as <code>sim_reg</code> will use it.</p>
+<p>If the prior knowledge of the phenotype/phenotype of the model organism has been ontologically encoded (for example, it may be available as MPO terms from the Mouse Genome Informatics (MGI) website, <a href="http://www.informatics.jax.org/">http://www.informatics.jax.org/</a>, [1]), another option is to use a phenotypic similarity function to obtain the numeric vector of weights for inclusion of terms in <code>phi</code> [2]. This may be more convenient, particularly when dealing with large numbers of genes. In the SimReg paper [2], the vector is set by exponentiating the Resnik-based [3] similarities of terms to the terms in the ‘literature phenotype’. In order to calculate the similarities based on Resnik’s similarity measure, we must first compute an ‘information content’ for the terms, equal to the negative log frequency. The frequencies can be calculated with respect to different collections of phenotypes. Here, we will calculate it with respect to the frequencies of terms within our collection, <code>phenotypes</code>, by calling the function exported by the <code>ontologyIndex</code> package, <code>get_term_info_content</code>. Note, it could also be calculated with respect to the frequency of the term amongst the ontological annotation of OMIM diseases (available from the HPO website, <a href="http://human-phenotype-ontology.github.io">http://human-phenotype-ontology.github.io</a> [4]). The function <code>get_term_set_to_term_sims</code> in the package <code>ontologySimilarity</code> can then be used to calculate the similarities between the terms in the sample space of <code>phi</code> and the <code>literature_phenotype</code>. It calculates a matrix of similarities between the individual terms in the literature phenotype and terms in the sample space. Let’s say the phenotype of the model organism in our example contains abnormalities of the thrombocytes and hearing abnormality.</p>
+<pre class="sourceCode r"><code class="sourceCode r">thrombocytes &lt;-<span class="st"> </span>hpo$id[<span class="kw">match</span>(<span class="st">&quot;Abnormality of thrombocytes&quot;</span>, hpo$name)]
+literature_phenotype &lt;-<span class="st"> </span><span class="kw">c</span>(hearing_abnormality, thrombocytes)
+info &lt;-<span class="st"> </span><span class="kw">get_term_info_content</span>(hpo, phenotypes)
+
+lit_sims_resnik &lt;-<span class="st"> </span><span class="kw">apply</span>(<span class="kw">exp</span>(<span class="kw">get_term_set_to_term_sims</span>(
+    <span class="kw">get_term_sim_mat</span>(hpo, info, <span class="dt">method=</span><span class="st">&quot;resnik&quot;</span>), 
+    literature_phenotype)), <span class="dv">2</span>, mean)</code></pre>
+<p>This can then be passed to <code>sim_reg</code> through the <code>lit_sims</code> parameter.</p>
+<pre class="sourceCode r"><code class="sourceCode r">with_prior_samples &lt;-<span class="st"> </span><span class="kw">sim_reg</span>(
+    <span class="dt">ontology=</span>hpo,
+    <span class="dt">x=</span>phenotypes,
+    <span class="dt">y=</span>genotypes,
+    <span class="dt">lit_sims=</span>lit_sims_resnik
+)
+
+<span class="kw">print</span>(<span class="kw">summary</span>(with_prior_samples), <span class="dt">ontology=</span>hpo)</code></pre>
+<pre><code>## --------------------------------------------------------------------------- 
+## P(gamma=1|y) =  0.2786875 
+## --------------------------------------------------------------------------- 
+## Numeric parameters:
+##              Parameter  Mean   SD
+##                  alpha -5.79 2.00
+##               log_beta  2.92 0.90
+##           logit_mean_f  0.23 0.83
+##  log_alpha_plus_beta_f  2.03 0.97
+##           logit_mean_g -1.56 1.25
+##  log_alpha_plus_beta_g  1.87 1.04
+## --------------------------------------------------------------------------- 
+## Phi:
+##           t                                   Name    P
+##  HP:0000364                    Hearing abnormality 0.48
+##  HP:0000598                 Abnormality of the ear 0.38
+##  HP:0002817          Abnormality of the upper limb 0.15
+##  HP:0003308                   Cervical subluxation 0.06
+##  HP:0006527        Lymphoid interstitial pneumonia 0.05
+##  HP:0010831                Impaired proprioception 0.05
+##  HP:0011294           EEG with frontal sharp waves 0.04
+##  HP:0011314    Abnormality of long bone morphology 0.04
+##  HP:0002813    Abnormality of limb bone morphology 0.04
+##  HP:0012252 Abnormal respiratory system morphology 0.04
+## ---------------------------------------------------------------------------</code></pre>
+<p>Note that including the <code>lit_sims</code> parameter has increased the mean posterior value of <code>gamma</code>.</p>
+<p>Often the binary genotype relates to a particular gene, and for many genes ontologically encoded phenotypes are available either in the form of HPO encoded OMIM annotations [4] or MPO annotations [1]. For a given set of subjects with HPO-coded phenotypes, it may be useful to apply the inference gene-by-gene, taking the binary genotype <code>y</code> to indicate the presence of a rare variant in each particular gene for each case. Thus, we may wish to systematically create informative prior distributions for <code>phi</code> for all genes. This can be done by downloading the file called ‘ALL_SOURCES_TYPICAL_FEATURES_genes_to_phenotype.txt’ from the HPO website, and running the following code yielding a list of term sets (i.e. character vectors of HPO term IDs).</p>
+<pre class="sourceCode r"><code class="sourceCode r">annotation_df &lt;-<span class="st"> </span><span class="kw">read.table</span>(<span class="dt">header=</span><span class="ot">FALSE</span>, <span class="dt">skip=</span><span class="dv">1</span>, <span class="dt">sep=</span><span class="st">&quot;</span><span class="ch">\t</span><span class="st">&quot;</span>, 
+    <span class="dt">file=</span><span class="st">&quot;ALL_SOURCES_TYPICAL_FEATURES_genes_to_phenotype.txt&quot;</span>, <span class="dt">stringsAsFactors=</span><span class="ot">FALSE</span>, <span class="dt">quote=</span><span class="st">&quot;&quot;</span>)
+hpo_by_gene &lt;-<span class="st"> </span><span class="kw">lapply</span>(<span class="kw">split</span>(<span class="dt">f=</span>annotation_df[,<span class="dv">2</span>], <span class="dt">x=</span>annotation_df[,<span class="dv">4</span>]), 
+    function(trms) <span class="kw">minimal_set</span>(hpo, <span class="kw">intersect</span>(trms, hpo$id)))</code></pre>
+<div id="references" class="section level2">
+<h2>References</h2>
+<ol style="list-style-type: decimal">
+<li>Eppig JT, Blake JA, Bult CJ, Kadin JA, Richardson JE;; The Mouse Genome Database Group. 2015. The Mouse Genome Database (MGD): facilitating mouse as a model for human biology and disease. Nucleic Acids Res. 2015 Jan 28;43(Database issue):D726-36.</li>
+<li>D. Greene, NIHR BioResource, S. Richardson, E. Turro, Phenotype similarity regression for identifying the genetic determinants of rare diseases, The American Journal of Human Genetics 98, 1-10, March 3, 2016.</li>
+<li>Philip Resnik (1995). Chris S. Mellish (Ed.), ed. Using information content to evaluate semantic similarity in a taxonomy. Proceedings of the 14th international joint conference on Artificial intelligence (IJCAI’95) (Morgan Kaufmann Publishers Inc., San Francisco, CA, USA) 1: 448-453.</li>
+<li>Sebastian Kohler, Sandra C Doelken, Christopher J. Mungall, Sebastian Bauer, Helen V. Firth, et al. The Human Phenotype Ontology project: linking molecular biology and disease through phenotype data Nucl. Acids Res. (1 January 2014) 42 (D1): D966-D974</li>
+</ol>
+</div>
+
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

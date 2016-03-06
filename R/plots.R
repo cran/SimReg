@@ -154,26 +154,23 @@ term_pair_marginals_plot <- function(x, ...) {
 	color.legend(align="rb", gradient="y", rect.col=rgb(c(rep(0, 50), seq(from=0, to=1, by=0.02)), seq(from=0, to=1, by=0.01), seq(from=0.5, to=0, by=-0.005)), xl=1.02, xr=1.06, yb=0, yt=1, legend=as.character(signif(digits=2, range(x, na.rm=TRUE))))
 }
 
-#' Create grid of SimReg output plots
+#' Plot SimReg output
 #'
-#' Create a PDF containing a set of summary plots for the output of the \code{sim_reg} application. Output contains plots of marginal probabilities of terms and pairs of terms being present phi and histograms giving the distributions of variables.
+#' Plot the output of the call to the \code{sim_reg} function. Output contains plots of marginal probabilities of terms and pairs of terms being present phi and histograms giving the distributions of variables. Note, a large device is required for a successful call.
 #'
+#' @param x Output of call to \code{sim_reg}.
 #' @template ontology
-#' @param file_name File to write plots to 
-#' @param sim_reg_out Output of call to \code{sim_reg}
-#' @return Plots graph to file
+#' @param ... Non-used arguments.
+#' @return Plots
 #' @export
-#' @importFrom grDevices dev.off pdf
 #' @importFrom graphics curve hist layout plot.new text plot par legend
 #' @importFrom stats dnorm pbeta qnorm 
-sim_reg_summary <- function(ontology, file_name, sim_reg_out) {
-	x <- 1
+plot.sim_reg_samples <- function(x, ontology, ...) {
+	sim_reg_out <- x
 
 	pbeta2 <- function(x, mean, alpha.plus.beta) pbeta(q=x, shape1=mean*alpha.plus.beta, shape2=(1-mean)*alpha.plus.beta)
 
-	pdf(file_name, width=25, height=35)
-
-	equal.w.cols <- c(3, 9)
+	equal.w.cols <- c(2, 9)
 	its <- length(sim_reg_out$gamma)
 
 	layout(do.call(what=cbind, lapply(1:length(equal.w.cols), function(col.ind) sort(rep(Reduce(init=1, f="+", x=c(0, equal.w.cols)[1:col.ind]) + 0:(equal.w.cols[col.ind]-1), as.integer(200/equal.w.cols[col.ind])+1)[1:200]))))
@@ -188,7 +185,6 @@ sim_reg_summary <- function(ontology, file_name, sim_reg_out) {
 	plot.new()
 
 	text(cex=3, "Mean parameter values", x=0, y=1, adj=0)
-	#legend(pch=19, x="topright", col=c("red", "black"), legend=expression(paste(gamma, " = 1", sep=""), paste(gamma, " = 0", sep="")))
 	par(mar=c(5, 4, 4, 2))
 	for (i in 1:length(non.char)) {
 		text(cex=2, adj=0, x=0, y=1-i/(2*length(non.char)), paste(non.char[i], ": ", round(digits=2, mean(sim_reg_out[[non.char[i]]])), sep=""))
@@ -205,26 +201,14 @@ sim_reg_summary <- function(ontology, file_name, sim_reg_out) {
 		plot.new()
 	}
 
-	par(mar=c(15, 15, 3, 3))
-
-	if (sum(sim_reg_out$gamma) > 0) {
-		if (max(sapply(sim_reg_out$phi[sim_reg_out$gamma], length)) > 1) {
-			term_pair_marginals_plot(full_names(ontology, term_pair_marginals(phi=sim_reg_out$phi[sim_reg_out$gamma], n=10)))
-		} else {
-			plot.new()
-		}
-	} else {
-		plot.new()
-	}
-
 	par(mar=c(5, 4, 4, 2))
 
 	alpha_star.range <- range(sim_reg_out$alpha_star, qnorm(p=c(0.05, 1-0.05), mean=sim_reg_out$priors$alpha_star_mean, sd=sim_reg_out$priors$alpha_star_sd))
-	hist(main=NULL, x=sim_reg_out$alpha_star[sim_reg_out$gamma], ylab="Density", xlab="log beta", freq=FALSE, breaks=seq(from=alpha_star.range[1], to=alpha_star.range[2], by=diff(alpha_star.range)/100), xlim=alpha_star.range)
+	hist(main=NULL, x=sim_reg_out$alpha_star[sim_reg_out$gamma], ylab="Density", xlab="alpha star", freq=FALSE, breaks=seq(from=alpha_star.range[1], to=alpha_star.range[2], by=diff(alpha_star.range)/100), xlim=alpha_star.range)
 	curve(add=TRUE, expr=dnorm(x, mean=sim_reg_out$priors$alpha_star_mean, sd=sim_reg_out$priors$alpha_star_sd), col="blue")
 
 	alpha.range <- range(sim_reg_out$alpha, qnorm(p=c(0.05, 1-0.05), mean=sim_reg_out$priors$alpha_mean, sd=sim_reg_out$priors$alpha_sd))
-	hist(main=NULL, x=sim_reg_out$alpha[sim_reg_out$gamma], ylab="Density", xlab="log beta", freq=FALSE, breaks=seq(from=alpha.range[1], to=alpha.range[2], by=diff(alpha.range)/100), xlim=alpha.range)
+	hist(main=NULL, x=sim_reg_out$alpha[sim_reg_out$gamma], ylab="Density", xlab="alpha ", freq=FALSE, breaks=seq(from=alpha.range[1], to=alpha.range[2], by=diff(alpha.range)/100), xlim=alpha.range)
 	curve(add=TRUE, expr=dnorm(x, mean=sim_reg_out$priors$alpha_mean, sd=sim_reg_out$priors$alpha_sd), col="blue")
 
 	log_beta.range <- range(sim_reg_out$log_beta, qnorm(p=c(0.05, 1-0.05), mean=sim_reg_out$priors$log_beta_mean, sd=sim_reg_out$priors$log_beta_sd))
@@ -251,6 +235,20 @@ sim_reg_summary <- function(ontology, file_name, sim_reg_out) {
 	plot(main="g transformation sample", x=NULL, xlim=c(0, 1), ylim=c(0, 1), ylab="g(similarity)", xlab="similarity")
 	for (i in sample(which(sim_reg_out$gamma), size=min(sum(sim_reg_out$gamma), 100))) curve(add=T, col=rgb(0,0,1,0.3), expr=pbeta2(x, mean=1-1/(1+exp(sim_reg_out$logit_mean_g[i])), alpha.plus.beta=exp(sim_reg_out$log_alpha_plus_beta_g[i])))
 
-	dev.off()
 }
 
+#' Create grid of SimReg output plots
+#'
+#' Create a PDF containing a set of summary plots for the output of the \code{sim_reg} application. Output contains plots of marginal probabilities of terms and pairs of terms being present phi and histograms giving the distributions of variables.
+#'
+#' @template ontology
+#' @param file_name File to write plots to 
+#' @param sim_reg_out Output of call to \code{sim_reg}
+#' @return Plots graph to file
+#' @export
+#' @importFrom grDevices dev.off pdf
+sim_reg_summary <- function(ontology, file_name, sim_reg_out) {
+	pdf(file_name, width=25, height=35)
+	plot(sim_reg_out, ontology=ontology)
+	dev.off()
+}

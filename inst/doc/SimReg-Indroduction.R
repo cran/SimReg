@@ -2,8 +2,8 @@
 knitr::opts_chunk$set(dev="svg", fig.width=7, fig.height=7)
 
 ## ------------------------------------------------------------------------
-suppressPackageStartupMessages(library(ontologyIndex))
-suppressPackageStartupMessages(library(SimReg))
+library(ontologyIndex)
+library(SimReg)
 data(hpo)
 set.seed(1)
 
@@ -20,7 +20,7 @@ head(x)
 
 ## ------------------------------------------------------------------------
 no_assoc <- sim_reg(ontology=hpo, x=x, y=y)
-no_assoc$mean_posterior_gamma
+`P(gamma=1)`(no_assoc)
 
 ## ------------------------------------------------------------------------
 x_assoc <- lapply(y, function(y_i) minimal_set(hpo, c(
@@ -31,8 +31,11 @@ head(x_assoc)
 
 ## ------------------------------------------------------------------------
 assoc <- sim_reg(ontology=hpo, x=x_assoc, y=y)
-assoc$mean_posterior_gamma
+`P(gamma=1)`(assoc)
 
 ## ------------------------------------------------------------------------
-phi_plot(hpo, assoc$phi[assoc$gamma], max_terms=10, fontsize=30)
+phi_plot(hpo, assoc$phi[assoc$gamma], max_terms=8, fontsize=30)
+
+## ------------------------------------------------------------------------
+print(summary(assoc), ontology=hpo)
 

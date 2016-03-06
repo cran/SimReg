@@ -9,7 +9,7 @@ Data::Data(LogicalVector in_y, term_list in_h, NumericVector in_g) : h(in_h) {
 	g = in_g;
 }
 
-double State::get_total_lik(LogicalMatrix row_is_column_anc, NumericMatrix ttsm, Likelihood& lik, Data& d, double temperature, bool reparameterise, bool quantile_normalise) {
+double State::get_total_lik(LogicalMatrix row_is_column_anc, NumericMatrix ttsm, Likelihood& lik, Data& d, double temperature) {
 	return
 		cur_gamma_lik +
 		cur_alpha_star_lik +
@@ -39,7 +39,7 @@ void State::initialise(
 	cur_logit_mean_g_lik = get_logit_mean_g_lik(likelihood, 1.0);
 	cur_log_alpha_plus_beta_g_lik = get_log_alpha_plus_beta_g_lik(likelihood, 1.0);
 	cur_phi_lik = get_phi_lik(likelihood, 1.0);
-	cur_y_lik = get_y_lik(likelihood, ttsm, row_is_column_anc, d, 1.0, true, false);
+	cur_y_lik = get_y_lik(likelihood, ttsm, row_is_column_anc, d, 1.0);
 	_s = get_s(ttsm, row_is_column_anc, d);
 	_x = get_x(ttsm, row_is_column_anc, d);
 }
@@ -92,25 +92,23 @@ State State::random(
 	return s;
 }
 
-pair<NumericVector, NumericVector> State::get_s(NumericMatrix ttsm, LogicalMatrix row_is_column_anc, Data& d, bool reparameterise, bool quantile_normalise) {
+pair<NumericVector, NumericVector> State::get_s(NumericMatrix ttsm, LogicalMatrix row_is_column_anc, Data& d) {
 	pair<NumericVector, NumericVector> s = get_each_way_sim(
 		row_is_column_anc,
 		ttsm,
 		phi,
-		d.h,
-		quantile_normalise
+		d.h
 	);
 	return s;
 }
 
-NumericVector State::get_x(NumericMatrix ttsm, LogicalMatrix row_is_column_anc, Data& d, bool reparameterise, bool quantile_normalise) {
+NumericVector State::get_x(NumericMatrix ttsm, LogicalMatrix row_is_column_anc, Data& d) {
 	NumericVector x = transform_each_way_sim(
 		_s,
 		logit_mean_f,
 		log_alpha_plus_beta_f,
 		logit_mean_g,
-		log_alpha_plus_beta_g,
-		reparameterise
+		log_alpha_plus_beta_g
 	);
 	return x;
 }
@@ -133,16 +131,15 @@ double State::get_logit_mean_g_lik(Likelihood lik, double temperature) { return 
 
 double State::get_log_alpha_plus_beta_g_lik(Likelihood lik, double temperature) { return lik.get_log_alpha_plus_beta_g_lik(log_alpha_plus_beta_g, gamma) / temperature; }
 
-double State::get_y_lik(Likelihood lik, NumericMatrix ttsm, LogicalMatrix row_is_column_anc, Data& d, double temperature, bool reparameterise, bool quantile_normalise) { return lik.get_y_lik(d.y, transform_each_way_sim(get_each_way_sim(
+double State::get_y_lik(Likelihood lik, NumericMatrix ttsm, LogicalMatrix row_is_column_anc, Data& d, double temperature) { return lik.get_y_lik(d.y, transform_each_way_sim(get_each_way_sim(
 			row_is_column_anc,
 			ttsm,
 			phi,
-			d.h,
-			quantile_normalise
+			d.h
 		),
 		logit_mean_f,
 		log_alpha_plus_beta_f,
 		logit_mean_g,
-		log_alpha_plus_beta_g, reparameterise), d.g, alpha_star, alpha, log_beta, gamma) / temperature; }
+		log_alpha_plus_beta_g), d.g, alpha_star, alpha, log_beta, gamma) / temperature; }
 
 

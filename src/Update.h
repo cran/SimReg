@@ -25,17 +25,17 @@ public:
 	IntegerVector phi_jumps_each;
 	bool joint_proposal;
 
-	void update_gamma(State& in_state, Likelihood& likelihood, double temperature, Data& d, LogicalMatrix row_is_column_anc, NumericMatrix ttsm, bool reparameterise, bool quantile_normalise);
-	void update_alpha_star(State& in_state, Likelihood& likelihood, double temperature, Data& d, LogicalMatrix row_is_column_anc, NumericMatrix ttsm, bool reparameterise, bool quantile_normalise);
-	void update_alpha(State& in_state, Likelihood& likelihood, double temperature, Data& d, LogicalMatrix row_is_column_anc, NumericMatrix ttsm, bool reparameterise, bool quantile_normalise);
-	void update_log_beta(State& in_state, Likelihood& likelihood, double temperature, Data& d, LogicalMatrix row_is_column_anc, NumericMatrix ttsm, bool reparameterise, bool quantile_normalise);
-	void update_phi(State& in_state, Likelihood& likelihood, double temperature, Data& d, LogicalMatrix row_is_column_anc, NumericMatrix ttsm, bool reparameterise, bool quantile_normalise);
-	void update_logit_mean_f(State& in_state, Likelihood& likelihood, double temperature, Data& d, LogicalMatrix row_is_column_anc, NumericMatrix ttsm, bool reparameterise, bool quantile_normalise);
-	void update_log_alpha_plus_beta_f(State& in_state, Likelihood& likelihood, double temperature, Data& d, LogicalMatrix row_is_column_anc, NumericMatrix ttsm, bool reparameterise, bool quantile_normalise);
-	void update_logit_mean_g(State& in_state, Likelihood& likelihood, double temperature, Data& d, LogicalMatrix row_is_column_anc, NumericMatrix ttsm, bool reparameterise, bool quantile_normalise);
-	void update_log_alpha_plus_beta_g(State& in_state, Likelihood& likelihood, double temperature, Data& d, LogicalMatrix row_is_column_anc, NumericMatrix ttsm, bool reparameterise, bool quantile_normalise);
-	void update(State& in_state, Likelihood& likelihood, double temperature, Data& d, LogicalMatrix row_is_column_anc, NumericMatrix ttsm, bool fix_phi, bool reparameterise, bool quantile_normalise);
-	void update_phi_and_inflexion(State& in_state, Likelihood& likelihood, double temperature, Data& d, LogicalMatrix row_is_column_anc, NumericMatrix ttsm, bool reparameterise, bool quantile_normalise);
+	void update_gamma(State& in_state, Likelihood& likelihood, double temperature, Data& d, LogicalMatrix row_is_column_anc, NumericMatrix ttsm);
+	void update_alpha_star(State& in_state, Likelihood& likelihood, double temperature, Data& d, LogicalMatrix row_is_column_anc, NumericMatrix ttsm);
+	void update_alpha(State& in_state, Likelihood& likelihood, double temperature, Data& d, LogicalMatrix row_is_column_anc, NumericMatrix ttsm);
+	void update_log_beta(State& in_state, Likelihood& likelihood, double temperature, Data& d, LogicalMatrix row_is_column_anc, NumericMatrix ttsm);
+	void update_phi(State& in_state, Likelihood& likelihood, double temperature, Data& d, LogicalMatrix row_is_column_anc, NumericMatrix ttsm);
+	void update_logit_mean_f(State& in_state, Likelihood& likelihood, double temperature, Data& d, LogicalMatrix row_is_column_anc, NumericMatrix ttsm);
+	void update_log_alpha_plus_beta_f(State& in_state, Likelihood& likelihood, double temperature, Data& d, LogicalMatrix row_is_column_anc, NumericMatrix ttsm);
+	void update_logit_mean_g(State& in_state, Likelihood& likelihood, double temperature, Data& d, LogicalMatrix row_is_column_anc, NumericMatrix ttsm);
+	void update_log_alpha_plus_beta_g(State& in_state, Likelihood& likelihood, double temperature, Data& d, LogicalMatrix row_is_column_anc, NumericMatrix ttsm);
+	void update(State& in_state, Likelihood& likelihood, double temperature, Data& d, LogicalMatrix row_is_column_anc, NumericMatrix ttsm, bool fix_phi);
+	void update_phi_and_inflexion(State& in_state, Likelihood& likelihood, double temperature, Data& d, LogicalMatrix row_is_column_anc, NumericMatrix ttsm);
 };
 
 

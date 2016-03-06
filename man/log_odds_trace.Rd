@@ -4,7 +4,7 @@
 \alias{log_odds_trace}
 \title{Get trace of log odds of observing the rare genotype (y = 1) for individual cases from the output of \code{\link{sim_reg}}}
 \usage{
-log_odds_trace(term_sim_mat, term_descendancy_matrix, term_sets, output,
+log_odds_trace(term_sim_mat, term_descendancy_matrix, term_sets, samples,
   g = rep(FALSE, length(term_sets)), as_probs = FALSE)
 }
 \arguments{
@@ -14,14 +14,14 @@ log_odds_trace(term_sim_mat, term_descendancy_matrix, term_sets, output,
 
 \item{term_sets}{List of character vectors of ontological term IDs.}
 
-\item{output}{Output of \code{\link{sim_reg}} function, giving trace of parameter values obtained from MCMC sample}
+\item{samples}{Object of class \code{sim_reg_samples}, i.e. the output of the \code{\link{sim_reg}} function.}
 
-\item{g}{Genotype log odds offsets per individual}
+\item{g}{Genotype log odds offsets per individual.}
 
-\item{as_probs}{Boolean value indicating whether to convert the log odds to probabilities}
+\item{as_probs}{Boolean value indicating whether to convert the log odds to probabilities.}
 }
 \value{
-Numeric matrix of log odds trace per individual
+Numeric matrix of log odds trace per individual.
 }
 \description{
 Get trace of log odds of observing the rare genotype (y = 1) for individual cases from the output of \code{\link{sim_reg}}

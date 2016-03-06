@@ -56,11 +56,11 @@ public:
 	double get_log_alpha_plus_beta_f_lik(Likelihood lik, double temperature = 1.0);
 	double get_logit_mean_g_lik(Likelihood lik, double temperature = 1.0);
 	double get_log_alpha_plus_beta_g_lik(Likelihood lik, double temperature = 1.0);
-	double get_y_lik(Likelihood lik, NumericMatrix ttsm, LogicalMatrix row_is_column_anc, Data& d, double temperature = 1.0, bool reparameterise = true, bool quantile_normalise = false);
-	NumericVector get_x(NumericMatrix ttsm, LogicalMatrix row_is_column_anc, Data& d, bool reparameterise = true, bool quantile_normalise = false);
-	pair<NumericVector, NumericVector> get_s(NumericMatrix ttsm, LogicalMatrix row_is_column_anc, Data& d, bool reparameterise = true, bool quantile_normalise = false);
+	double get_y_lik(Likelihood lik, NumericMatrix ttsm, LogicalMatrix row_is_column_anc, Data& d, double temperature = 1.0);
+	NumericVector get_x(NumericMatrix ttsm, LogicalMatrix row_is_column_anc, Data& d);
+	pair<NumericVector, NumericVector> get_s(NumericMatrix ttsm, LogicalMatrix row_is_column_anc, Data& d);
 
-	double get_total_lik(LogicalMatrix row_is_column_anc, NumericMatrix ttsm, Likelihood& lik, Data& d, double temperature = 1.0, bool reparameterise = true, bool quantile_normalise = false);
+	double get_total_lik(LogicalMatrix row_is_column_anc, NumericMatrix ttsm, Likelihood& lik, Data& d, double temperature = 1.0);
 	
 	bool gamma;
 	double alpha_star;

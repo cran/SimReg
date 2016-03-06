@@ -26,16 +26,14 @@ NumericVector transform_each_way_sim(
 	double logit_mean_f,
 	double log_alpha_plus_beta_f,
 	double logit_mean_g,
-	double log_alpha_plus_beta_g,
-	bool use_mean_and_inv_var
+	double log_alpha_plus_beta_g
 );
 
 pair<NumericVector, NumericVector> get_each_way_sim(
 	LogicalMatrix row_is_column_anc,
 	NumericMatrix term_term_sim_mat,
 	IntegerVector phi,
-	term_list terms,
-	bool quantile_normalise
+	term_list terms
 );
 
 #endif
