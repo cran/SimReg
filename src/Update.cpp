@@ -216,6 +216,8 @@ void Update::update_phi(State& in_state, Likelihood& likelihood, double temperat
 
 		phi_proposed[to_change] = phi_jumps[random_integer(phi_jumps.length())];
 
+		in_state.phi_proposed = phi_proposed;
+
 		double proposed_phi_lik = likelihood.get_phi_lik(phi_proposed, in_state.gamma) / temperature;
 		
 		double jump_back_lik = log((double)phi_jumps_each[in_state.phi[to_change]]);
@@ -266,12 +268,14 @@ void Update::update_phi(State& in_state, Likelihood& likelihood, double temperat
 			in_state._x = prop_x;
 		}
 	} else { 
-		for (int k = 0; k < in_state.phi.length(); k++)
+		for (int k = 0; k < in_state.phi.length(); k++) {
 			in_state.phi[k] = likelihood.pseudo_phi_marginal_prior[random_integer(likelihood.pseudo_phi_marginal_prior.length())];
-			in_state.cur_phi_lik = in_state.get_phi_lik(likelihood);
+			in_state.phi_proposed[k] = in_state.phi[k];
+		}
+		in_state.cur_phi_lik = in_state.get_phi_lik(likelihood);
 
-			in_state._s = in_state.get_s(ttsm, row_is_column_anc, d);
-			in_state._x = in_state.get_x(ttsm, row_is_column_anc, d);
+		in_state._s = in_state.get_s(ttsm, row_is_column_anc, d);
+		in_state._x = in_state.get_x(ttsm, row_is_column_anc, d);
 	}
 }
 
@@ -281,13 +285,11 @@ void Update::update_logit_mean_f(State& in_state, Likelihood& likelihood, double
 		
 		double proposed_logit_mean_f_lik = likelihood.get_logit_mean_f_lik(proposed_logit_mean_f, in_state.gamma) / temperature;
 		
-		NumericVector x_proposed = transform_each_way_sim(
-			in_state._s,
+		NumericVector x_proposed = transform_one_way_sim(
+			in_state._s.first,
 			proposed_logit_mean_f,
-			in_state.log_alpha_plus_beta_f,
-			in_state.logit_mean_g,
-			in_state.log_alpha_plus_beta_g
-		);
+			in_state.log_alpha_plus_beta_f
+		) * in_state._s.second;
 		
 		double proposed_y_lik = likelihood.get_y_lik(d.y, x_proposed, d.g, in_state.alpha_star, in_state.alpha, in_state.log_beta, in_state.gamma) / temperature;
 
@@ -310,13 +312,11 @@ void Update::update_log_alpha_plus_beta_f(State& in_state, Likelihood& likelihoo
 		
 		double proposed_log_alpha_plus_beta_f_lik = likelihood.get_log_alpha_plus_beta_f_lik(proposed_log_alpha_plus_beta_f, in_state.gamma) / temperature;
 		
-		NumericVector x_proposed = transform_each_way_sim(
-			in_state._s,
+		NumericVector x_proposed = transform_one_way_sim(
+			in_state._s.first,
 			in_state.logit_mean_f,
-			proposed_log_alpha_plus_beta_f,
-			in_state.logit_mean_g,
-			in_state.log_alpha_plus_beta_g
-		);
+			proposed_log_alpha_plus_beta_f 
+		) * in_state._s.second;
 		
 		double proposed_y_lik = likelihood.get_y_lik(d.y, x_proposed, d.g, in_state.alpha_star, in_state.alpha, in_state.log_beta, in_state.gamma) / temperature;
 
@@ -339,13 +339,11 @@ void Update::update_logit_mean_g(State& in_state, Likelihood& likelihood, double
 		
 		double proposed_logit_mean_g_lik = likelihood.get_logit_mean_g_lik(proposed_logit_mean_g, in_state.gamma) / temperature;
 		
-		NumericVector x_proposed = transform_each_way_sim(
-			in_state._s,
-			in_state.logit_mean_f,
-			in_state.log_alpha_plus_beta_f,
+		NumericVector x_proposed = transform_one_way_sim(
+			in_state._s.second,
 			proposed_logit_mean_g,
 			in_state.log_alpha_plus_beta_g
-		);
+		) * in_state._s.first;
 		
 		double proposed_y_lik = likelihood.get_y_lik(d.y, x_proposed, d.g, in_state.alpha_star, in_state.alpha, in_state.log_beta, in_state.gamma) / temperature;
 
@@ -368,13 +366,11 @@ void Update::update_log_alpha_plus_beta_g(State& in_state, Likelihood& likelihoo
 		
 		double proposed_log_alpha_plus_beta_g_lik = likelihood.get_log_alpha_plus_beta_g_lik(proposed_log_alpha_plus_beta_g, in_state.gamma) / temperature;
 		
-		NumericVector x_proposed = transform_each_way_sim(
-			in_state._s,
-			in_state.logit_mean_f,
-			in_state.log_alpha_plus_beta_f,
+		NumericVector x_proposed = transform_one_way_sim(
+			in_state._s.second,
 			in_state.logit_mean_g,
-			proposed_log_alpha_plus_beta_g
-		);
+			proposed_log_alpha_plus_beta_g 
+		) * in_state._s.first;
 		
 		double proposed_y_lik = likelihood.get_y_lik(d.y, x_proposed, d.g, in_state.alpha_star, in_state.alpha, in_state.log_beta, in_state.gamma) / temperature;
 

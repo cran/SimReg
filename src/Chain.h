@@ -26,4 +26,19 @@ List Chain(
 	bool record_model_likelhoods
 );
 
+List SA_Chain(
+	Likelihood& likelihood,
+	Update& updater,
+	Data& d, 
+	LogicalMatrix row_is_column_anc, 
+	NumericMatrix ttsm,
+	State& cur_state,
+	int thin,
+	int iterations,
+	int pre_anneal_its,
+	bool fix_phi,
+	double initial_temperature,
+	int phi_size
+);
+
 #endif

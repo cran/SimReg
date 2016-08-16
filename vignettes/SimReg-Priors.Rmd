@@ -30,7 +30,7 @@ To help illustrate the ideas, we'll consider a scenario where there is some evid
 
 ```{r}
 hearing_abnormality <- hpo$id[match("Hearing abnormality", hpo$name)]
-genotypes <- c(rep(TRUE, 3), rep(FALSE, 97))
+genotypes <- c(rep(TRUE, 4), rep(FALSE, 96))
 
 #give all subjects 5 random terms and add 'hearing abnormality' for those with y_i=TRUE
 phenotypes <- lapply(genotypes, function(y_i) minimal_set(hpo, c(
@@ -39,7 +39,7 @@ if (y_i) hearing_abnormality else character(0), sample(terms, size=5))))
 
 So there are three cases with the rare variant (i.e. having y_i = TRUE) and all of them have the 'Hearing abnormality' HPO term. 
 
-An application of `sim_reg` yields:
+An application of yields:
 
 ```{r}
 samples <- sim_reg(ontology=hpo, x=phenotypes, y=genotypes)
@@ -63,8 +63,8 @@ literature_phenotype <- c(hearing_abnormality, thrombocytes)
 info <- get_term_info_content(hpo, phenotypes)
 
 lit_sims_resnik <- apply(exp(get_term_set_to_term_sims(
-	get_term_sim_mat(hpo, info, method="resnik"), 
-	literature_phenotype)), 2, mean)
+	ontology=hpo, information_content=info, terms=names(info),
+	term_sim_method="resnik", term_sets=list(literature_phenotype))), 2, mean)
 ```
 
 This can then be passed to `sim_reg` through the `lit_sims` parameter.
@@ -94,6 +94,6 @@ hpo_by_gene <- lapply(split(f=annotation_df[,2], x=annotation_df[,4]),
 ## References
 
 1. Eppig JT, Blake JA, Bult CJ, Kadin JA, Richardson JE;; The Mouse Genome Database Group. 2015. The Mouse Genome Database (MGD): facilitating mouse as a model for human biology and disease. Nucleic Acids Res. 2015 Jan 28;43(Database issue):D726-36.
-2.  D. Greene, NIHR BioResource, S. Richardson, E. Turro, Phenotype similarity regression for identifying the genetic determinants of rare diseases, The American Journal of Human Genetics 98, 1-10, March 3, 2016.
+2. D. Greene, NIHR BioResource, S. Richardson, E. Turro, Phenotype similarity regression for identifying the genetic determinants of rare diseases, The American Journal of Human Genetics 98, 1-10, March 3, 2016.
 3. Philip Resnik (1995). Chris S. Mellish (Ed.), ed. Using information content to evaluate semantic similarity in a taxonomy. Proceedings of the 14th international joint conference on Artificial intelligence (IJCAI'95) (Morgan Kaufmann Publishers Inc., San Francisco, CA, USA) 1: 448-453.
 4. Sebastian Kohler, Sandra C Doelken, Christopher J. Mungall, Sebastian Bauer, Helen V. Firth, et al.  The Human Phenotype Ontology project: linking molecular biology and disease through phenotype data Nucl. Acids Res. (1 January 2014) 42 (D1): D966-D974

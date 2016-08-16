@@ -136,24 +136,6 @@ phi_plot <- function(
 	)
 }
  
-#' Plot marginal distribution of term-pair inclusion in phi
-#'
-#' Plots the marginal frequency of terms pairs' inclusion in the phi parameter over the course of an application of \code{\link{sim_reg}} as heatmap.
-#'
-#' @param x Numeric matrix.
-#' @param ... Other parameters to pass to image.
-#' @return Nothing - side effect: plots graph.
-#' @export
-#' @importFrom plotrix color.legend
-#' @importFrom graphics image axis
-#' @importFrom grDevices rgb 
-term_pair_marginals_plot <- function(x, ...) {
-	image(x, col=rgb(c(rep(0, 50), seq(from=0, to=1, by=0.02)), seq(from=0, to=1, by=0.01), seq(from=0.5, to=0, by=-0.005)), axes=FALSE, ...)
-	axis(1, at=0:(ncol(x)-1)/(ncol(x)-1), las=2, labels=colnames(x))
-	axis(2, las=2, labels=rownames(x), at=0:(nrow(x)-1)/(nrow(x)-1)) 
-	color.legend(align="rb", gradient="y", rect.col=rgb(c(rep(0, 50), seq(from=0, to=1, by=0.02)), seq(from=0, to=1, by=0.01), seq(from=0.5, to=0, by=-0.005)), xl=1.02, xr=1.06, yb=0, yt=1, legend=as.character(signif(digits=2, range(x, na.rm=TRUE))))
-}
-
 #' Plot SimReg output
 #'
 #' Plot the output of the call to the \code{sim_reg} function. Output contains plots of marginal probabilities of terms and pairs of terms being present phi and histograms giving the distributions of variables. Note, a large device is required for a successful call.
@@ -163,78 +145,8 @@ term_pair_marginals_plot <- function(x, ...) {
 #' @param ... Non-used arguments.
 #' @return Plots
 #' @export
-#' @importFrom graphics curve hist layout plot.new text plot par legend
-#' @importFrom stats dnorm pbeta qnorm 
 plot.sim_reg_samples <- function(x, ontology, ...) {
-	sim_reg_out <- x
-
-	pbeta2 <- function(x, mean, alpha.plus.beta) pbeta(q=x, shape1=mean*alpha.plus.beta, shape2=(1-mean)*alpha.plus.beta)
-
-	equal.w.cols <- c(2, 9)
-	its <- length(sim_reg_out$gamma)
-
-	layout(do.call(what=cbind, lapply(1:length(equal.w.cols), function(col.ind) sort(rep(Reduce(init=1, f="+", x=c(0, equal.w.cols)[1:col.ind]) + 0:(equal.w.cols[col.ind]-1), as.integer(200/equal.w.cols[col.ind])+1)[1:200]))))
-
-	par(mar=c(5, 4, 4, 2))
-
-	variables <- c("gamma", "alpha_star", "alpha", "log_beta", "logit_mean_f", "log_alpha_plus_beta_f", "logit_mean_g", "log_alpha_plus_beta_g", "phi")
-	numeric.vars <- Filter(x=variables, f=function(x) class(sim_reg_out[[x]]) == "numeric")
-	non.char <- setdiff(variables, "phi")
-	no.gamma <- setdiff(variables, "gamma")
-
-	plot.new()
-
-	text(cex=3, "Mean parameter values", x=0, y=1, adj=0)
-	par(mar=c(5, 4, 4, 2))
-	for (i in 1:length(non.char)) {
-		text(cex=2, adj=0, x=0, y=1-i/(2*length(non.char)), paste(non.char[i], ": ", round(digits=2, mean(sim_reg_out[[non.char[i]]])), sep=""))
-	}
-
-	for (i in 1:length(no.gamma)) {
-		text(cex=2, adj=0, x=0, y=0.5-i/(2*length(no.gamma)), paste(no.gamma[i], " acceptance: ", round(digits=2, mean(sim_reg_out[[paste(no.gamma[i], "_accept", sep="")]])), sep=""))
-	}
-	par(mar=c(5, 4, 4, 2))
-
-	if (sum(sim_reg_out$gamma) > 0) {
-		plot(phi_plot(ontology, sim_reg_out$phi[sim_reg_out$gamma], font.size=100, max_terms=10, colour_gradient=FALSE), main=expression(paste("Marginal Posterior of Inclusion of Terms in ", phi, sep="")), cex.main=3)
-	} else {
-		plot.new()
-	}
-
-	par(mar=c(5, 4, 4, 2))
-
-	alpha_star.range <- range(sim_reg_out$alpha_star, qnorm(p=c(0.05, 1-0.05), mean=sim_reg_out$priors$alpha_star_mean, sd=sim_reg_out$priors$alpha_star_sd))
-	hist(main=NULL, x=sim_reg_out$alpha_star[sim_reg_out$gamma], ylab="Density", xlab="alpha star", freq=FALSE, breaks=seq(from=alpha_star.range[1], to=alpha_star.range[2], by=diff(alpha_star.range)/100), xlim=alpha_star.range)
-	curve(add=TRUE, expr=dnorm(x, mean=sim_reg_out$priors$alpha_star_mean, sd=sim_reg_out$priors$alpha_star_sd), col="blue")
-
-	alpha.range <- range(sim_reg_out$alpha, qnorm(p=c(0.05, 1-0.05), mean=sim_reg_out$priors$alpha_mean, sd=sim_reg_out$priors$alpha_sd))
-	hist(main=NULL, x=sim_reg_out$alpha[sim_reg_out$gamma], ylab="Density", xlab="alpha ", freq=FALSE, breaks=seq(from=alpha.range[1], to=alpha.range[2], by=diff(alpha.range)/100), xlim=alpha.range)
-	curve(add=TRUE, expr=dnorm(x, mean=sim_reg_out$priors$alpha_mean, sd=sim_reg_out$priors$alpha_sd), col="blue")
-
-	log_beta.range <- range(sim_reg_out$log_beta, qnorm(p=c(0.05, 1-0.05), mean=sim_reg_out$priors$log_beta_mean, sd=sim_reg_out$priors$log_beta_sd))
-	hist(main=NULL, x=sim_reg_out$log_beta[sim_reg_out$gamma], ylab="Density", xlab="log beta", freq=FALSE, breaks=seq(from=log_beta.range[1], to=log_beta.range[2], by=diff(log_beta.range)/100), xlim=log_beta.range)
-	curve(add=TRUE, expr=dnorm(x, mean=sim_reg_out$priors$log_beta_mean, sd=sim_reg_out$priors$log_beta_sd), col="blue")
-
-	hist(main=NULL, x=1-1/(1+exp(sim_reg_out$logit_mean_f[sim_reg_out$gamma])), xlim=c(0, 1), breaks=seq(from=0, to=1, by=0.01), freq=FALSE, xlab="mean f")
-	curve(add=TRUE, col="blue", expr=dnorm(log(x)-log(1-x), mean=sim_reg_out$priors$logit_mean_f_mean, sd=sim_reg_out$priors$logit_mean_f_sd)/x/(1-x))
-
-	log_alpha_plus_beta_f.range <- range(sim_reg_out$log_alpha_plus_beta_f[sim_reg_out$gamma], qnorm(p=c(0.05, 1-0.05), mean=sim_reg_out$priors$log_alpha_plus_beta_f_mean, sd=sim_reg_out$priors$log_alpha_plus_beta_f_sd))
-	hist(main=NULL, x=sim_reg_out$log_alpha_plus_beta_f[sim_reg_out$gamma], breaks=seq(from=log_alpha_plus_beta_f.range[1], to=log_alpha_plus_beta_f.range[2], by=diff(log_alpha_plus_beta_f.range)/100), freq=FALSE, xlab="log_alpha_plus_beta_f")
-	curve(add=TRUE, expr=dnorm(x, mean=sim_reg_out$priors$log_alpha_plus_beta_f_mean, sd=sim_reg_out$priors$log_alpha_plus_beta_f_sd), col="blue")
-
-	plot(main="f transformation sample", x=NULL, xlim=c(0, 1), ylim=c(0, 1), ylab="f(similarity)", xlab="similarity")
-	for (i in sample(which(sim_reg_out$gamma), size=min(sum(sim_reg_out$gamma), 100))) curve(add=T, col=rgb(0,0,1,0.3), expr=pbeta2(x, mean=1-1/(1+exp(sim_reg_out$logit_mean_f[i])), alpha.plus.beta=exp(sim_reg_out$log_alpha_plus_beta_f[i])))
-
-	hist(main=NULL, x=1-1/(1+exp(sim_reg_out$logit_mean_g[sim_reg_out$gamma])), xlim=c(0, 1), breaks=seq(from=0, to=1, by=0.01), freq=FALSE, xlab="mean g")
-	curve(add=TRUE, col="blue", expr=dnorm(log(x)-log(1-x))/x/(1-x))
-
-	log_alpha_plus_beta_g.range <- range(sim_reg_out$log_alpha_plus_beta_g[sim_reg_out$gamma], qnorm(p=c(0.05, 1-0.05), mean=sim_reg_out$priors$log_alpha_plus_beta_g_mean, sd=sim_reg_out$priors$log_alpha_plus_beta_g_sd))
-	hist(main=NULL, x=sim_reg_out$log_alpha_plus_beta_g[sim_reg_out$gamma], breaks=seq(from=log_alpha_plus_beta_g.range[1], to=log_alpha_plus_beta_g.range[2], by=diff(log_alpha_plus_beta_g.range)/100), freq=FALSE, xlab="log_alpha_plus_beta_g")
-	curve(add=TRUE, expr=dnorm(x, mean=sim_reg_out$priors$log_alpha_plus_beta_g_mean, sd=sim_reg_out$priors$log_alpha_plus_beta_g_sd), col="blue")
-
-	plot(main="g transformation sample", x=NULL, xlim=c(0, 1), ylim=c(0, 1), ylab="g(similarity)", xlab="similarity")
-	for (i in sample(which(sim_reg_out$gamma), size=min(sum(sim_reg_out$gamma), 100))) curve(add=T, col=rgb(0,0,1,0.3), expr=pbeta2(x, mean=1-1/(1+exp(sim_reg_out$logit_mean_g[i])), alpha.plus.beta=exp(sim_reg_out$log_alpha_plus_beta_g[i])))
-
+	plot(summary(x), ontology=ontology, ...)
 }
 
 #' Create grid of SimReg output plots

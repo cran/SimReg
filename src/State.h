@@ -86,6 +86,7 @@ public:
 
 	pair<NumericVector, NumericVector> _s;
 	NumericVector _x;
+	IntegerVector phi_proposed;
 
 };
 

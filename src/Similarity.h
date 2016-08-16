@@ -10,30 +10,38 @@ using namespace Rcpp;
 using namespace std;
 
 Rcpp::NumericVector average_across_h(
-	NumericMatrix term_term_sim_mat,
-	IntegerVector phi,
-	term_list terms
+	NumericMatrix &term_term_sim_mat,
+	IntegerVector &phi,
+	term_list &terms
 );
 
 Rcpp::NumericVector average_across_phi(
-	NumericMatrix term_term_sim_mat,
-	IntegerVector phi,
-	term_list terms
+	NumericMatrix &term_term_sim_mat,
+	IntegerVector &phi,
+	term_list &terms
+);
+
+NumericVector transform_one_way_sim(
+	NumericVector s,
+	double logit_mean,
+	double log_alpha_plus_beta,
+	bool interpolate = true
 );
 
 NumericVector transform_each_way_sim(
-	pair<NumericVector, NumericVector> each_way_sims,
+	pair<NumericVector, NumericVector> &each_way_sims,
 	double logit_mean_f,
 	double log_alpha_plus_beta_f,
 	double logit_mean_g,
-	double log_alpha_plus_beta_g
+	double log_alpha_plus_beta_g,
+	bool interpolate = true
 );
 
 pair<NumericVector, NumericVector> get_each_way_sim(
-	LogicalMatrix row_is_column_anc,
-	NumericMatrix term_term_sim_mat,
-	IntegerVector phi,
-	term_list terms
+	LogicalMatrix &row_is_column_anc,
+	NumericMatrix &term_term_sim_mat,
+	IntegerVector &phi,
+	term_list &terms
 );
 
 #endif

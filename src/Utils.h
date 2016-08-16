@@ -7,6 +7,11 @@
 using namespace Rcpp;
 using namespace std;
 
+NumericVector linterpolate(
+	NumericVector &scaffold,
+	NumericVector &x
+);
+
 const double LOG_ODDS_TAYLOR_SERIES_THRESHOLD = 18.0;
 const double MINUS_LOG_SQRT_2_PI = -0.9189385;
 
@@ -62,6 +67,7 @@ vector_type filledRcppVector(value_type value, int n) {
 		result[i] = value;
 	return result;
 }
+
 
 #endif
 

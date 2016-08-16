@@ -3,6 +3,25 @@
 using namespace Rcpp;
 using namespace std;
 
+NumericVector linterpolate(
+	NumericVector &scaffold,
+	NumericVector &x
+) {
+	int n = x.length();
+	int scaf_len = scaffold.length();
+	int windows = scaf_len - 1;
+	double window_length = 1.0/windows;
+	NumericVector result(n);
+	for (int i = 0; i < n; i++) {
+		int low = (int)(x[i]/window_length);
+		if (low == windows)
+			result[i] = scaffold[windows];
+		else
+			result[i] = scaffold[low] + (scaffold[low+1]-scaffold[low])*(x[i]-low*window_length)/window_length;
+	}
+	return result;
+}
+
 double log_likelihood_beta(
 	double value,
 	double alpha,
@@ -27,4 +46,5 @@ double sum_vec(
 		result += v[i];
 	return result;
 }
+
 

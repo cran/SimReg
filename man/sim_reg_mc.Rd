@@ -8,8 +8,7 @@ sim_reg_mc(ontology, y, x, g = rep(0, length(y)), its = 10000, chains = 3,
   cores = 1, information_content = get_term_info_content(ontology, term_sets
   = x), term_descendancy_matrix = get_term_descendancy_matrix(ontology,
   names(information_content)), term_sim_mat = prune_sim_mat(ontology,
-  get_term_sim_mat(ontology, information_content, term_descendancy_matrix =
-  term_descendancy_matrix)), ...)
+  get_term_sim_mat(ontology, information_content)), ...)
 }
 \arguments{
 \item{ontology}{\code{ontology_index} object.}
@@ -40,7 +39,7 @@ sim_reg_mc(ontology, y, x, g = rep(0, length(y)), its = 10000, chains = 3,
 \description{
 Simple interface to the \code{sim_reg} procedure returning a \code{sim_reg_summary}.
 
-Performns Bayesian `similarity regression' on given binary genotype \code{y} (logical vector) against ontological term sets \code{x} (list of character vectors of term IDs). This could, for example, be a \code{list} of character vectors of HPO term IDs representing case phenotypes. It returns an object of class \code{sim_reg_samples}, which is a list of traces for the sampled parameters. The results can be summarised with \code{summary}. Of particular interest are the estimated mean posteriors of \code{gamma} (the model selection indicator, thus giving an estimate of the probability of an association under the model assumptions - stored in the `mean_posterior_gamma' slot in the result, i.e. \code{result$mean_posterior_gamma}, and the characteristic ontological profile phi (which can be visualised by the functions \code{\link{phi_plot}}, \code{\link{term_pair_marginals_plot}}, and \code{\link{term_marginals}}).
+Performns Bayesian `similarity regression' on given binary genotype \code{y} (logical vector) against ontological term sets \code{x} (list of character vectors of term IDs). This could, for example, be a \code{list} of character vectors of HPO term IDs representing case phenotypes. It returns an object of class \code{sim_reg_samples}, which is a list of traces for the sampled parameters. The results can be summarised with \code{summary}. Of particular interest are the estimated mean posteriors of \code{gamma} (the model selection indicator, thus giving an estimate of the probability of an association under the model assumptions - stored in the `mean_posterior_gamma' slot in the result, i.e. \code{result$mean_posterior_gamma}, and the characteristic ontological profile phi (which can be visualised by the functions \code{\link{phi_plot}}, and \code{\link{term_marginals}}).
 }
 \seealso{
 \code{\link{sim_reg}}

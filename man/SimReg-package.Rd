@@ -18,8 +18,8 @@ characteristic of the disease.
 \tabular{ll}{
 Package: \tab SimReg\cr
 Type: \tab Package\cr
-Version: \tab 1.4\cr
-Date: \tab 2016-01-12\cr
+Version: \tab 2.1\cr
+Date: \tab 2016-08-06\cr
 License: \tab GPL (>= 2)\cr
 }
 Key functions include sim.reg, for performing similarity regression of binary response variable against an ontologically encoded predictor. The typical use would be for fitting a model for the presence of a rare genetic variant conditional on an ontologically encoded phenotype.

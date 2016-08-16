@@ -6,7 +6,7 @@
 as.data.frame.sim_reg_summary <- function(x, ...) {
 	top3 <- sort(x[["phi_marginal_term_freqs"]], decreasing=TRUE)[1:min(length(x[["phi_marginal_term_freqs"]]), 3)]
 	data.frame(
-		`P(gamma=1|y)`=x[["mean_posterior_gamma"]],
+		`P(gamma=1|y)`=x[["prob_gamma1"]],
 		`Top 3 phi terms`=paste(names(top3), ": ", round(digits=2, top3), sep="", collapse=", "),
 		check.names=FALSE
 	)
@@ -24,19 +24,10 @@ print.sim_reg_summary <- function(x, width=getOption("width"), ontology=NULL, ..
 
 	dashed <- paste0(rep("-", width), collapse="")
 	cat(dashed, "\n")
-	cat("P(gamma=1|y) = ", mean(x[["mean_posterior_gamma"]]), "\n")
+	cat("P(gamma=1|y) = ", mean(x[["prob_gamma1"]]), "\n")
 
 	cat(dashed, "\n")
-	if (x[["mean_posterior_gamma"]] > 0) {
-		cat("Numeric parameters:\n")
-		print(data.frame(
-			Parameter=numeric_params,
-			Mean=round(digits=2, x[["numeric_param_means_given_gamma1"]]),
-			SD=round(digits=2, x[["numeric_param_sds_given_gamma1"]])
-		), row.names=FALSE)
-
-		cat(dashed, "\n")
-
+	if (x[["prob_gamma1"]] > 0) {
 		cat("Phi:\n")
 		print(data.frame(
 			t=names(x[["phi_marginal_term_freqs"]]),
@@ -75,7 +66,8 @@ summary.sim_reg_samples <- function(object, ...) {
 	structure(
 		class="sim_reg_summary",
 		list(
-			mean_posterior_gamma=object[["mean_posterior_gamma"]],
+			prob_gamma1=object[["prob_gamma1"]],
+			simplified=FALSE,
 			numeric_param_means_given_gamma1=sapply(object[numeric_params], mean),
 			numeric_param_sds_given_gamma1=sapply(object[numeric_params], sd),
 			phi_marginal_term_freqs=margs
@@ -94,24 +86,11 @@ summary.sim_reg_samples <- function(object, ...) {
 #' @importFrom ontologyPlot onto_plot remove_links calibrate_sizes official_labels
 #' @importFrom ontologyIndex get_ancestors
 #' @importFrom grDevices hsv
-#' @importFrom graphics lines
+#' @importFrom graphics lines plot
 plot.sim_reg_summary <- function(x, ontology, max_plot_terms=10, cex=1, ...) {
-	layout(matrix(c(1,2,2),ncol=3,nrow=1))
-
-	lines.required <- length(x[["numeric_param_means_given_gamma1"]]) + 2
-
-	plot(x=NULL, xlim=0:1, ylim=0:1, axes=FALSE, xlab="", ylab="")
-	
-	text(adj=c(0, 0.5), x=0.1, y=1-1/lines.required, labels=paste("P(gamma=1|y) = ", x[["mean_posterior_gamma"]], sep=""), cex=cex)
-	lines(x=c(0.1, 0.9), y=rep(times=2, 1-2/lines.required))
-
-	for (param.no in 1:length(x[["numeric_param_means_given_gamma1"]])) {
-		text(adj=c(0, 0.5), x=0.1, y=1-(param.no+2)/lines.required, labels=paste(names(x[["numeric_param_means_given_gamma1"]])[param.no], " = ", round(digits=2, x[["numeric_param_means_given_gamma1"]][param.no]), sep=""), cex=cex)
-	}
-
 	subject.terms <- names(sort(decreasing=TRUE, x[["phi_marginal_term_freqs"]])[1:min(length(x[["phi_marginal_term_freqs"]]), max_plot_terms)])
 	terms <- remove_links(ontology, get_ancestors(ontology, subject.terms))
-	plot(onto_plot(
+	plot(main=paste("P(gamma=1|y) = ", x[["prob_gamma1"]], sep=""), onto_plot(
 		ontology=ontology, 
 		terms=terms, 
 		fontsize=30,

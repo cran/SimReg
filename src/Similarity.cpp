@@ -3,10 +3,10 @@
 using namespace Rcpp;
 using namespace std;
 
-NumericVector average_across_h(
-	NumericMatrix term_term_sim_mat,
-	IntegerVector phi,
-	term_list terms
+Rcpp::NumericVector average_across_h(
+	NumericMatrix &term_term_sim_mat,
+	IntegerVector &phi,
+	term_list &terms
 ) {
 	NumericVector result(terms.num_cases);
 	IntegerVector terms_per_case(terms.num_cases);
@@ -32,10 +32,10 @@ NumericVector average_across_h(
 	return result;
 }
 
-NumericVector average_across_phi(
-	NumericMatrix term_term_sim_mat,
-	IntegerVector phi,
-	term_list terms
+Rcpp::NumericVector average_across_phi(
+	NumericMatrix &term_term_sim_mat,
+	IntegerVector &phi,
+	term_list &terms
 ) {
 	NumericVector result(terms.num_cases);
 	for (int case_index = 0; case_index < terms.num_cases; case_index++)
@@ -54,12 +54,43 @@ NumericVector average_across_phi(
 	return result;
 }
 
+NumericVector transform_one_way_sim(
+	NumericVector s,
+	double logit_mean,
+	double log_alpha_plus_beta,
+	bool interpolate
+) {
+	int n = s.length();
+
+	NumericVector result(n);
+
+	double mean = 1.0-1.0/(exp(logit_mean) + 1.0);
+	double inv_var = exp(log_alpha_plus_beta);
+
+	double alpha = inv_var * mean;
+	double beta = inv_var * (1.0 - mean);
+		
+	if (interpolate) {
+		int windows = 20;
+		NumericVector f(windows+1);
+		for (int i = 0; i <= windows; i++) f[i] = R::pbeta((double)i/windows, alpha, beta, 1, 0);
+		result = linterpolate(f, s);
+	} else {
+		for (int i = 0; i < n; i++)
+			result[i] = R::pbeta(s[i], alpha, beta, 1, 0);
+	}
+
+	return result;
+
+}
+
 NumericVector transform_each_way_sim(
-	pair<NumericVector, NumericVector> each_way_sims,
+	pair<NumericVector, NumericVector> &each_way_sims,
 	double logit_mean_f,
 	double log_alpha_plus_beta_f,
 	double logit_mean_g,
-	double log_alpha_plus_beta_g
+	double log_alpha_plus_beta_g,
+	bool interpolate
 ) {
 	int n = each_way_sims.first.length();
 
@@ -75,18 +106,29 @@ NumericVector transform_each_way_sim(
 	double alpha_g = inv_var_g * mean_g;
 	double beta_g = inv_var_g * (1.0 - mean_g);
 		
-	for (int i = 0; i < n; i++) {
-		result[i] = R::pbeta(each_way_sims.first[i], alpha_f, beta_f, 1, 0) * R::pbeta(each_way_sims.second[i], alpha_g, beta_g, 1, 0);
+	if (interpolate) {
+		int windows = 20;
+		NumericVector f(windows+1);
+		NumericVector g(windows+1);
+		for (int i = 0; i <= windows; i++) {
+			f[i] = R::pbeta((double)i/windows, alpha_f, beta_f, 1, 0);
+			g[i] = R::pbeta((double)i/windows, alpha_g, beta_g, 1, 0);
+		}
+		result = linterpolate(f, each_way_sims.first) * linterpolate(g, each_way_sims.second);
+	} else {
+		for (int i = 0; i < n; i++) {
+			result[i] = R::pbeta(each_way_sims.first[i], alpha_f, beta_f, 1, 0) * R::pbeta(each_way_sims.second[i], alpha_g, beta_g, 1, 0);
+		}
 	}
 
 	return result;
 }
 
 pair<NumericVector, NumericVector> get_each_way_sim(
-	LogicalMatrix row_is_column_anc,
-	NumericMatrix term_term_sim_mat,
-	IntegerVector phi,
-	term_list terms
+	LogicalMatrix &row_is_column_anc,
+	NumericMatrix &term_term_sim_mat,
+	IntegerVector &phi,
+	term_list &terms
 ) {
 	IntegerVector phi_minimal = minimal(row_is_column_anc, phi);
 	NumericVector phi_av = average_across_phi(term_term_sim_mat, phi_minimal, terms);

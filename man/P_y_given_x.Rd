@@ -8,7 +8,7 @@ P_y_given_x(term_sim_mat, term_sets, samples, g = rep(FALSE,
   length(term_sets)), ontology = NULL, term_descendancy_matrix = NULL)
 }
 \arguments{
-\item{term_sim_mat}{Numeric matrix of similarities between individual terms, typically created with \code{get_term_sim_mat}}
+\item{term_sim_mat}{Numeric matrix with rows and columns corresponding to (and named by) term IDs, and cells containing the similarity between the row and column term}
 
 \item{term_sets}{List of character vectors of ontological term IDs.}
 

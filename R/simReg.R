@@ -11,13 +11,14 @@ sim_reg_parameters <- c("gamma", "alpha_star", "alpha", "log_beta", "phi", "logi
 sim_reg_parameters_type <- c("logical", "numeric", "numeric", "numeric", "list", "numeric", "numeric", "numeric", "numeric")
 sim_reg_parameters_gamma <- c(NA, FALSE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE)
 sim_reg_likelihood_traces <- paste0(c(paste0("total", c(paste0("_gamma",0:1), "")), "y", sim_reg_parameters), "_likelihood")
-sim_reg_parameter_traces <- c("phi_vector","s_x","s_phi","s",sim_reg_parameters)
+sim_reg_parameter_traces <- c("proposed_phi_vector","phi_vector","s_x","s_phi","s",sim_reg_parameters)
 sim_reg_parameter_acceptance_traces <- paste0(sim_reg_parameters, "_accept")
 sim_reg_all_traces <- unique(c(sim_reg_parameter_traces, sim_reg_parameter_acceptance_traces, sim_reg_likelihood_traces, "iteration"))
 
 #' Get final sample from \code{sim_reg_samples} object
 #'
 #' @template samples
+#' @export
 final_sample <- function(samples) {
 	c(lapply(X=samples[sim_reg_parameters[-which(sim_reg_parameters == "phi")]], function(x) x[length(x)]), list(phi=samples$phi_vector[nrow(samples$phi_vector),]))
 }
@@ -50,7 +51,7 @@ tune_proposal_sds <- function(
 	information_content=get_term_info_content(ontology, term_sets=x),
 
 	term_descendancy_matrix=get_term_descendancy_matrix(ontology, names(information_content)),
-	term_sim_mat=prune_sim_mat(ontology, get_term_sim_mat(ontology, information_content, term_descendancy_matrix=term_descendancy_matrix)),
+	term_sim_mat=prune_sim_mat(ontology, get_term_sim_mat(ontology, information_content)),
 	case_ids=unlist(mapply(SIMPLIFY=FALSE, FUN=rep, 0:(length(x)-1), sapply(x, length))),
 	term_ids=as.integer(match(unlist(x), colnames(term_descendancy_matrix)))-1,
 
@@ -178,10 +179,7 @@ tune_proposal_sds <- function(
 		phi_num_leaves_geometric_rate,
 		FALSE,
 		FALSE,
-		0,
-		0,
-		0,
-		1
+		FALSE
 	)
 
 	#if (verbose) print(burn_time)
@@ -261,10 +259,7 @@ tune_proposal_sds <- function(
 			phi_num_leaves_geometric_rate,
 			FALSE,
 			FALSE,
-			0,
-			0,
-			0,
-			1
+			FALSE
 		)
 
 		start_params <- final_sample(cycle_trace)
@@ -303,7 +298,7 @@ sim_reg_no_pseudopriors <- function(
 	information_content=get_term_info_content(ontology, term_sets=x),
 
 	term_descendancy_matrix=get_term_descendancy_matrix(ontology, names(information_content)),
-	term_sim_mat=prune_sim_mat(ontology, get_term_sim_mat(ontology, information_content, term_descendancy_matrix=term_descendancy_matrix)),
+	term_sim_mat=prune_sim_mat(ontology, get_term_sim_mat(ontology, information_content)),
 	case_ids=unlist(mapply(SIMPLIFY=FALSE, FUN=rep, 0:(length(x)-1), sapply(x, length))),
 	term_ids=as.integer(match(unlist(x), colnames(term_descendancy_matrix)))-1,
 
@@ -379,6 +374,7 @@ sim_reg_no_pseudopriors <- function(
 			}
 		} else {
 			stopifnot(class(x) == "list")
+			stopifnot(all(sapply(x, is.character)))
 			if (sum(sapply(x, length) == 0) > 0) stop(paste("All elements of x must contain at least 1 term"))
 			stopifnot(!any(sapply(x, is.null)))
 			stopifnot(!all(unlist(x) %in% rownames(term_sim_mat)))
@@ -459,10 +455,7 @@ sim_reg_no_pseudopriors <- function(
 		phi_num_leaves_geometric_rate,
 		FALSE,
 		FALSE,
-		0,
-		0,
-		0,
-		1
+		FALSE
 	)
 
 	#flatten likelihood traces into main results list
@@ -476,6 +469,7 @@ sim_reg_no_pseudopriors <- function(
 
 	#make phi_vector slot using term IDs instead of integer references
 	result$phi_vector <- apply(result$phi_vector, 2, function(x) colnames(term_descendancy_matrix)[x+1])
+	result$proposed_phi_vector <- apply(result$proposed_phi_vector, 2, function(x) colnames(term_descendancy_matrix)[x+1])
 
 	#make phi slot a list of minimal sets
 	result$phi <- mapply(SIMPLIFY=FALSE, FUN="[", split(result$phi_vector, seq(nrow(result$phi_vector))), split(as_row_leaves(term_descendancy_matrix, result$phi_vector), seq(nrow(result$phi_vector))))
@@ -529,7 +523,7 @@ sim_reg_no_pseudopriors <- function(
 
 #' Similarity regression
 #'
-#' Performns Bayesian `similarity regression' on given binary genotype \code{y} (logical vector) against ontological term sets \code{x} (list of character vectors of term IDs). This could, for example, be a \code{list} of character vectors of HPO term IDs representing case phenotypes. It returns an object of class `sim_reg_samples` which is a list of traces for the sampled parameters. The results can be summarised with `summary`. Of particular interest are the estimated mean posteriors of \code{gamma} (the model selection indicator, thus giving an estimate of the probability of an association under the model assumptions - stored in the `mean_posterior_gamma' slot in the result, i.e. \code{result$mean_posterior_gamma} (which can also be calculated \code{mean(result$gamma)}), and the characteristic ontological profile phi (which can be visualised by the functions \code{\link{phi_plot}}, \code{\link{term_pair_marginals_plot}}, and \code{\link{term_marginals}}).
+#' Performns Bayesian `similarity regression' on given binary genotype \code{y} (logical vector) against ontological term sets \code{x} (list of character vectors of term IDs). This could, for example, be a \code{list} of character vectors of HPO term IDs representing case phenotypes. It returns an object of class `sim_reg_samples` which is a list of traces for the sampled parameters. The results can be summarised with `summary`. Of particular interest are the estimated mean posteriors of \code{gamma} (the model selection indicator, thus giving an estimate of the probability of an association under the model assumptions - stored in the `prob_gamma1' slot in the result, i.e. \code{result$prob_gamma1} (which can also be calculated \code{mean(result$gamma)}), and the characteristic ontological profile phi (which can be visualised by the functions \code{\link{phi_plot}}, and \code{\link{term_marginals}}).
 #'
 #' @template ontology
 #' @param y Logical vector of genotypes (typically TRUE for rare genotype, FALSE for common genotype).
@@ -623,7 +617,7 @@ sim_reg <- function(
 
 	information_content=get_term_info_content(ontology, term_sets=x),
 	term_descendancy_matrix=get_term_descendancy_matrix(ontology, names(information_content)),
-	term_sim_mat=prune_sim_mat(ontology, get_term_sim_mat(ontology, information_content, term_descendancy_matrix=term_descendancy_matrix)),
+	term_sim_mat=prune_sim_mat(ontology, get_term_sim_mat(ontology, information_content)),
 	case_ids=unlist(mapply(SIMPLIFY=FALSE, FUN=rep, 0:(length(x)-1), sapply(x, length))),
 	term_ids=as.integer(match(unlist(x), colnames(term_descendancy_matrix)))-1,
 
@@ -995,12 +989,11 @@ sim_reg <- function(
 	}
 
 	bf <- (1-g_prior) * mean(result$gamma) / (1-mean(result$gamma)) / g_prior
-	result$mean_posterior_gamma <- if (mean(result$gamma) == 1) { 1 } else { if (mean(result$gamma) == 0) 0 else bf * gamma_prior_prob / (bf * gamma_prior_prob + 1 - gamma_prior_prob) }
+	result$prob_gamma1 <- if (mean(result$gamma) == 1) { 1 } else { if (mean(result$gamma) == 0) 0 else bf * gamma_prior_prob / (bf * gamma_prior_prob + 1 - gamma_prior_prob) }
 	result$proposal_sds <- proposal_sds
 
-	if (verbose) cat(dashes, "\n", "Done. Mean posterior gamma = ", result$mean_posterior_gamma, "\n", dashes, "\n", sep="")
+	if (verbose) cat(dashes, "\n", "Done. Mean posterior gamma = ", result$prob_gamma1, "\n", dashes, "\n", sep="")
 	class(result) <- "sim_reg_samples"
 	result
 }
-
 

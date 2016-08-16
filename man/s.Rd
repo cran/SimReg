@@ -11,7 +11,7 @@ s(term_sim_mat, term_descendancy_matrix, phi, x = NULL,
   average_across_phi = TRUE)
 }
 \arguments{
-\item{term_sim_mat}{Numeric matrix of similarities between individual terms, typically created with \code{get_term_sim_mat}}
+\item{term_sim_mat}{Numeric matrix with rows and columns corresponding to (and named by) term IDs, and cells containing the similarity between the row and column term}
 
 \item{term_descendancy_matrix}{Logical term descendancy matrix, dimensions symmetrically labelled by terms, and where by a cell value of TRUE indicates that the row is the ancestor of the column term (in the sense of the DAG structure of the HPO.}
 

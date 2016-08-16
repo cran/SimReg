@@ -4,13 +4,13 @@
 #include "DeltaLikelihood.h"
 #include "Chain.h"
 
-#ifndef INCLUDED_RCPP_EXPORTS_H
-#define INCLUDED_RCPP_EXPORTS_H
+#ifndef INCLUDED_INTERFACE_H
+#define INCLUDED_INTERFACE_H
 
 using namespace Rcpp;
 using namespace std;
 
-typedef NumericVector (*similarity_function)(NumericMatrix,IntegerVector,term_list);
+typedef NumericVector (*similarity_function)(NumericMatrix&,IntegerVector&,term_list&);
 
 RcppExport SEXP leaf_matrix(
 	SEXP R_row_is_column_anc,
@@ -109,10 +109,7 @@ RcppExport SEXP R_sim_reg(
 	SEXP R_phi_num_leaves_geometric_rate,
 	SEXP R_fix_phi,
 	SEXP R_joint_proposal,
-	SEXP R_H,
-	SEXP R_adapt_block_size,
-	SEXP R_max_tuning_batches,
-	SEXP R_repeats
+	SEXP R_annealing
 );
 
 #endif

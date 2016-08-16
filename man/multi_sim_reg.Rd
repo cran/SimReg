@@ -4,14 +4,9 @@
 \alias{multi_sim_reg}
 \title{Similarity regression on multiple \code{y} vectors}
 \usage{
-multi_sim_reg(ontology, x, y, g = matrix(0, nrow = nrow(y), ncol = ncol(y)),
-  lit_sim_mat = NULL, summary_function = summary, simplify = FALSE,
-  mc_cores = 1L, information_content = get_term_info_content(ontology,
-  term_sets = x),
-  term_descendancy_matrix = get_term_descendancy_matrix(ontology,
-  names(information_content)), term_sim_mat = prune_sim_mat(ontology,
-  get_term_sim_mat(ontology, information_content, term_descendancy_matrix =
-  term_descendancy_matrix)), ...)
+multi_sim_reg(ontology, x, y, mc_cores = 1L, return_data_frame = TRUE,
+  g = matrix(0, nrow = nrow(y), ncol = ncol(y)), lit_sim_mat = NULL,
+  summary_function = summary, ...)
 }
 \arguments{
 \item{ontology}{\code{ontology_index} object.}
@@ -20,21 +15,15 @@ multi_sim_reg(ontology, x, y, g = matrix(0, nrow = nrow(y), ncol = ncol(y)),
 
 \item{y}{Logical matrix of genotypes (typically TRUE for rare genotype, FALSE for common genotype).}
 
+\item{mc_cores}{Number of cores to use - passed to \code{mcmapply} function.}
+
+\item{return_data_frame}{Logical value determining whether to return data.frame.}
+
 \item{g}{Genotype log odds offset per individual.}
 
 \item{lit_sim_mat}{Numeric matrix of prior weights for terms inclusion in phi for each row of \code{y}, where the columns match to those in \code{term_sim_mat}. Thus, must have exactly the same number of rows as \code{y}, and same number of columns as \code{term_sim_mat}. Defaults to 'all equal' (=1).}
 
 \item{summary_function}{Function to apply to the samples generated conditioning on each row of \code{y}.}
-
-\item{simplify}{Logical value determining whether result is simplified by using \code{rbind} to turn it into a \code{data.frame}.}
-
-\item{mc_cores}{Number of cores to use - passed to \code{mcmapply} function.}
-
-\item{information_content}{Numeric vector, named by HPO IDs, containing the information content of corresponding terms.}
-
-\item{term_descendancy_matrix}{Logical term descendancy matrix, dimensions symmetrically labelled by terms, and where by a cell value of TRUE indicates that the row is the ancestor of the column term (in the sense of the DAG structure of the HPO.}
-
-\item{term_sim_mat}{Numeric matrix with rows and columns corresponding to (and named by) term IDs, and cells containing the similarity between the row and column term}
 
 \item{...}{Other arguments to be passed to \code{\link{sim_reg}}.}
 }

@@ -105,7 +105,7 @@ as_row_leaves <- function(term_descendancy_matrix, terms_matrix) {
 
 #' Get trace of log odds of observing the rare genotype (y = 1) for individual cases from the output of \code{\link{sim_reg}}
 #'
-#' @param term_sim_mat Numeric matrix of similarities between individual terms, typically created with \code{get_term_sim_mat}
+#' @template term_sim_mat
 #' @template term_descendancy_matrix
 #' @template term_sets
 #' @param samples Object of class \code{sim_reg_samples}, i.e. the output of the \code{\link{sim_reg}} function.
@@ -142,7 +142,7 @@ log_odds_trace <- function(
 
 #' Get probabilities y_i given ontological term sets x_i (\code{term_sets}) based on SimReg parameter values sampled with \code{\link{sim_reg}}
 #'
-#' @param term_sim_mat Numeric matrix of similarities between individual terms, typically created with \code{get_term_sim_mat}
+#' @template term_sim_mat
 #' @template term_sets
 #' @param samples Object of class \code{sim_reg_samples}, i.e. the output of the \code{\link{sim_reg}} function.
 #' @param g Genotype log odds offsets per individual.
@@ -165,7 +165,7 @@ P_y_given_x <- function(
 
 #' Evaluate asymmetric similarity function
 #'
-#' @param term_sim_mat Numeric matrix of similarities between individual terms, typically created with \code{get_term_sim_mat}
+#' @template term_sim_mat
 #' @template term_descendancy_matrix
 #' @param phi Character vector of term IDs for phi (or character matrix, where each row is an instance of phi)
 #' @template x
@@ -223,7 +223,7 @@ s_phi <- function(...) s(average_across_phi=TRUE, ...)
 #' @export
 `P(gamma=1)` <- function(x) {
 	stopifnot(class(x) %in% c("sim_reg_samples", "sim_reg_summary"))
-	x[["mean_posterior_gamma"]]
+	x[["prob_gamma1"]]
 }
 
 #' Gets summarised output of multiple \code{sim_reg} chains
@@ -256,7 +256,7 @@ sim_reg_mc <- function(
 	cores=1,
 	information_content=get_term_info_content(ontology, term_sets=x),
 	term_descendancy_matrix=get_term_descendancy_matrix(ontology, names(information_content)),
-	term_sim_mat=prune_sim_mat(ontology, get_term_sim_mat(ontology, information_content, term_descendancy_matrix=term_descendancy_matrix)),
+	term_sim_mat=prune_sim_mat(ontology, get_term_sim_mat(ontology, information_content)),
 	...
 ) {
 
@@ -283,7 +283,7 @@ sim_reg_mc <- function(
 		c(
 			mapply(SIMPLIFY=FALSE, FUN=function(tr.name, is.mat) do.call(what=if (is.mat) rbind else c, lapply(reps, "[[", tr.name)), setNames(nm=sim_reg_all_traces), sapply(reps[[1]][sim_reg_all_traces], is.matrix)),
 			list(
-				mean_posterior_gamma=mean(sapply(reps, "[[", "mean_posterior_gamma")),
+				prob_gamma1=mean(sapply(reps, "[[", "prob_gamma1")),
 				priors=reps[[1]][["priors"]],
 				proposal_sds=apply(do.call(what=cbind, lapply(reps, function(rep) simplify2array(rep[["proposal_sds"]]))), 1, mean)
 			)

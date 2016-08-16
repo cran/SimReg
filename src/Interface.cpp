@@ -1,4 +1,4 @@
-#include "RcppExports.h"
+#include "Interface.h"
 
 using namespace Rcpp;
 using namespace std;
@@ -204,10 +204,7 @@ RcppExport SEXP R_sim_reg(
 	SEXP R_phi_num_leaves_geometric_rate,
 	SEXP R_fix_phi,
 	SEXP R_joint_proposal,
-	SEXP R_H,
-	SEXP R_adapt_block_size,
-	SEXP R_max_tuning_batches,
-	SEXP R_repeats
+	SEXP R_annealing
 ) {
 BEGIN_RCPP
 	NumericVector gamma_prior_prob = as<NumericVector>(R_gamma_prior_prob);
@@ -321,8 +318,7 @@ BEGIN_RCPP
 		pseudo_log_alpha_plus_beta_g_sd,
 		phi_lik_func,
 		pseudo_phi_marginal_prior,
-		row_is_column_anc.ncol(),
-		as<double>(R_H)
+		row_is_column_anc.ncol()
 	);
 
 	Update update;
@@ -362,61 +358,43 @@ BEGIN_RCPP
 		ttsm
 	);
 
-	NumericVector target_range = NumericVector::create(0.3, 0.7);
-	int adapt_block_size = as<int>(R_adapt_block_size);
-	int max_tuning_batches = as<int>(R_max_tuning_batches);
+	List result;
 
-	int batch_number = 0;
-	double adaption_rate = 4;
-
-	if (max_tuning_batches > 0) {
-		double batch_mpg = 0.0;
-		do {
-			batch_mpg = 0.0;
-			for (int adapting_it = 0; adapting_it < adapt_block_size; adapting_it++) {
-				update.update(
-					cur_state,
-					likelihood,
-					1.0,
-					d,
-					row_is_column_anc,
-					ttsm,
-					fix_phi
-				);
-				if (cur_state.gamma) batch_mpg += (double)1/(double)adapt_block_size;
-			}
-
-			if (batch_mpg < target_range[0]) {
-				likelihood.H += adaption_rate/sqrt(1.0 + (double)batch_number);
-			} 
-			if (batch_mpg > target_range[1]) {
-				likelihood.H -= adaption_rate/sqrt(1.0 + (double)batch_number);
-			}
-
-			batch_number++;
-		}
-		while ((batch_mpg < target_range[0] || batch_mpg > target_range[1]) && batch_number <= max_tuning_batches);
+	if (!as<bool>(R_annealing)) {
+		result = Chain(
+			likelihood,
+			update,
+			d, 
+			row_is_column_anc, 
+			ttsm,
+			cur_state,
+			thin,
+			its,
+			phi_size,
+			1.0,
+			record_x,
+			fix_phi,
+			record_model_likelihoods
+		);
+	} 
+	else {
+		result = SA_Chain(
+			likelihood,
+			update,
+			d, 
+			row_is_column_anc, 
+			ttsm,
+			cur_state,
+			thin,
+			its,
+			its/2,
+			fix_phi,
+			1.0,
+			phi_size
+		);
 	}
-
-	List result = Chain(
-		likelihood,
-		update,
-		d, 
-		row_is_column_anc, 
-		ttsm,
-		cur_state,
-		thin,
-		its,
-		phi_size,
-		1.0,
-		record_x,
-		fix_phi,
-		record_model_likelihoods
-	);
 
 	return result;
 
 END_RCPP
 }
-
-

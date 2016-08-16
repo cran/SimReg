@@ -12,7 +12,7 @@ terms <- get_ancestors(hpo, c(hpo$id[match(c("Abnormality of thrombocytes","Hear
 
 ## ------------------------------------------------------------------------
 hearing_abnormality <- hpo$id[match("Hearing abnormality", hpo$name)]
-genotypes <- c(rep(TRUE, 3), rep(FALSE, 97))
+genotypes <- c(rep(TRUE, 4), rep(FALSE, 96))
 
 #give all subjects 5 random terms and add 'hearing abnormality' for those with y_i=TRUE
 phenotypes <- lapply(genotypes, function(y_i) minimal_set(hpo, c(
@@ -32,8 +32,8 @@ literature_phenotype <- c(hearing_abnormality, thrombocytes)
 info <- get_term_info_content(hpo, phenotypes)
 
 lit_sims_resnik <- apply(exp(get_term_set_to_term_sims(
-	get_term_sim_mat(hpo, info, method="resnik"), 
-	literature_phenotype)), 2, mean)
+	ontology=hpo, information_content=info, terms=names(info),
+	term_sim_method="resnik", term_sets=list(literature_phenotype))), 2, mean)
 
 ## ------------------------------------------------------------------------
 with_prior_samples <- sim_reg(

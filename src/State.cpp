@@ -53,9 +53,14 @@ void State::set_random(
 ) {
 	gamma = unif_rand() < likelihood.gamma_prior_prob;
 	IntegerVector _phi(phi_terms);
-	for (int i = 0; i < phi_terms; i++)
+	IntegerVector _phi_proposed(phi_terms);
+	for (int i = 0; i < phi_terms; i++) {
 		_phi[i] = random_integer(ttsm.ncol());
+		_phi_proposed[i] = _phi[i];
+	}
 	phi = _phi;
+	phi_proposed = _phi_proposed;
+	
 	alpha_star = norm_rand() * likelihood.alpha_star_sd + likelihood.alpha_star_mean;
 	alpha = norm_rand() * likelihood.alpha_sd + likelihood.alpha_mean;
 	log_beta = norm_rand() * likelihood.log_beta_sd + likelihood.log_beta_mean;
@@ -77,9 +82,13 @@ State State::random(
 	State s;
 	s.gamma = unif_rand() < likelihood.gamma_prior_prob;
 	IntegerVector _phi(phi_terms);
-	for (int i = 0; i < phi_terms; i++)
+	IntegerVector _phi_proposed(phi_terms);
+	for (int i = 0; i < phi_terms; i++) {
 		_phi[i] = random_integer(ttsm.ncol());
+		_phi_proposed[i] = _phi[i];
+	}
 	s.phi = _phi;
+	s.phi_proposed = _phi_proposed;
 	s.alpha_star = norm_rand() * likelihood.alpha_star_sd + likelihood.alpha_star_mean;
 	s.alpha = norm_rand() * likelihood.alpha_sd + likelihood.alpha_mean;
 	s.log_beta = norm_rand() * likelihood.log_beta_sd + likelihood.log_beta_mean;
@@ -131,15 +140,19 @@ double State::get_logit_mean_g_lik(Likelihood lik, double temperature) { return 
 
 double State::get_log_alpha_plus_beta_g_lik(Likelihood lik, double temperature) { return lik.get_log_alpha_plus_beta_g_lik(log_alpha_plus_beta_g, gamma) / temperature; }
 
-double State::get_y_lik(Likelihood lik, NumericMatrix ttsm, LogicalMatrix row_is_column_anc, Data& d, double temperature) { return lik.get_y_lik(d.y, transform_each_way_sim(get_each_way_sim(
-			row_is_column_anc,
-			ttsm,
-			phi,
-			d.h
-		),
+double State::get_y_lik(Likelihood lik, NumericMatrix ttsm, LogicalMatrix row_is_column_anc, Data& d, double temperature) { 
+	pair<NumericVector,NumericVector> s = get_each_way_sim(
+		row_is_column_anc,
+		ttsm,
+		phi,
+		d.h
+	);
+	return lik.get_y_lik(d.y, transform_each_way_sim(
+		s,
 		logit_mean_f,
 		log_alpha_plus_beta_f,
 		logit_mean_g,
-		log_alpha_plus_beta_g), d.g, alpha_star, alpha, log_beta, gamma) / temperature; }
+		log_alpha_plus_beta_g), d.g, alpha_star, alpha, log_beta, gamma) / temperature; 
+}
 
 
