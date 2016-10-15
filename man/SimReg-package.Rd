@@ -1,28 +1,26 @@
-\name{SimReg-package}
-\alias{SimReg-package}
-\alias{SimReg}
+\name{SimReg3-package}
+\alias{SimReg3-package}
+\alias{SimReg3}
 \docType{package}
 \title{
 Similarity Regression Functions
 }
 \description{
-Functions for performing Bayesian `similarity regression',
-specialised for modelling the association between a HPO-encoded phenotype
-and binary genotype. A `no association' model is compared with one in which
-the log odds of having a rare genotype is linked to the semantic similarity
-between patient phenotype and a latent characteristic phenotype. The method
-estimates the probability of an association together with an HPO-coded phenotype
-characteristic of the disease. 
+	Functions for performing Bayesian similarity regression,
+    and evaluating the probability of association between sets of ontological terms
+    and binary response vector. A random model is compared with one in which
+    the log odds of a true response is linked to the semantic similarity
+    between terms and a latent characteristic ontological profile.
 }
 \details{
 \tabular{ll}{
-Package: \tab SimReg\cr
+Package: \tab SimReg3\cr
 Type: \tab Package\cr
-Version: \tab 2.1\cr
-Date: \tab 2016-08-06\cr
+Version: \tab 3.0\cr
+Date: \tab 2016-10-14\cr
 License: \tab GPL (>= 2)\cr
 }
-Key functions include sim.reg, for performing similarity regression of binary response variable against an ontologically encoded predictor. The typical use would be for fitting a model for the presence of a rare genetic variant conditional on an ontologically encoded phenotype.
+Key functions include sim_reg, for similarity regression of binary response variable against an ontologically encoded predictor. An example application would be inferring the probability of association between the presence of a rare genetic variant conditional on an ontologically encoded phenotype.
 }
 \author{
 Daniel Greene <dg333@cam.ac.uk>

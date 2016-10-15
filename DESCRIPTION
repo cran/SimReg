@@ -1,17 +1,15 @@
 Package: SimReg
 Type: Package
-Title: Similarity Regression Functions
-Version: 2.1
-Date: 2016-08-16
+Title: Similarity Regression
+Version: 3.0
+Date: 2016-09-17
 Author: Daniel Greene
 Maintainer: Daniel Greene <dg333@cam.ac.uk>
-Description: Functions for performing Bayesian `similarity regression',
-    specialised for modelling the association between a HPO-encoded phenotype
-    and binary genotype. A `no association' model is compared with one in which
-    the log odds of having a rare genotype is linked to the semantic similarity
-    between patient phenotype and a latent characteristic phenotype. The method
-    estimates the probability of an association together with an HPO-coded phenotype
-    characteristic of the disease. 
+Description: Functions for performing Bayesian similarity regression,
+    and evaluating the probability of association between sets of ontological terms
+    and binary response vector. A random model is compared with one in which
+    the log odds of a true response is linked to the semantic similarity
+    between terms and a latent characteristic ontological profile. 
 License: GPL (>= 2)
 Imports: Rcpp (>= 0.11.1), ontologyIndex (>= 2.0), ontologySimilarity
         (>= 2.0), ontologyPlot
@@ -21,6 +19,6 @@ Suggests: knitr
 VignetteBuilder: knitr
 RoxygenNote: 5.0.1
 NeedsCompilation: yes
-Packaged: 2016-08-16 14:19:56 UTC; dg333
+Packaged: 2016-10-15 02:09:46 UTC; dg333
 Repository: CRAN
-Date/Publication: 2016-08-16 19:47:22
+Date/Publication: 2016-10-15 18:51:56

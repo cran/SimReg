@@ -20,7 +20,7 @@ head(x)
 
 ## ------------------------------------------------------------------------
 no_assoc <- sim_reg(ontology=hpo, x=x, y=y)
-`P(gamma=1)`(no_assoc)
+prob_association(no_assoc)
 
 ## ------------------------------------------------------------------------
 x_assoc <- lapply(y, function(y_i) minimal_set(hpo, c(
@@ -31,11 +31,8 @@ head(x_assoc)
 
 ## ------------------------------------------------------------------------
 assoc <- sim_reg(ontology=hpo, x=x_assoc, y=y)
-`P(gamma=1)`(assoc)
+prob_association(assoc)
 
 ## ------------------------------------------------------------------------
-phi_plot(hpo, assoc$phi[assoc$gamma], max_terms=8, fontsize=30)
-
-## ------------------------------------------------------------------------
-print(summary(assoc), ontology=hpo)
+plot_term_marginals(hpo, get_term_marginals(assoc), max_terms=8, fontsize=30)
 

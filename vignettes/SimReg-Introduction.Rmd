@@ -12,13 +12,13 @@ vignette: >
 knitr::opts_chunk$set(dev="svg", fig.width=7, fig.height=7)
 ```
 
-`SimReg` has a function `sim_reg` for performing *Bayesian Similarity Regression* [1]. The aim is to estimate the probability of an association between ontological term sets and a binary variable, and should such an association exist, a *characteristic ontological profile* such that ontological similarity to the profile increases the probability of the binary variable taking the value `TRUE`. The procedure has been used in the context of linking an ontologically encoded phenotype (as HPO terms) to a binary genotype (indicating the presence or absence of a rare variant within given genes) [1], so in this guide, we'll adopt the same theme.  
+`SimReg` has a function `sim_reg` for performing *Bayesian Similarity Regression* [1]. It returns an estimated probability of an association between ontological term sets and a binary variable, and conditional on the association: a *characteristic ontological profile*, such that ontological similarity to the profile increases the probability of the binary variable taking the value `TRUE`. The procedure has been used in the context of linking an ontologically encoded phenotype (as HPO terms) to a binary genotype (indicating the presence or absence of a rare variant within given genes) [1], so in this guide, we'll adopt the same theme.  
 
-The function is an MCMC routine which accepts many arguments including the response variable `y` (`logical`), the ontologically encoded predictor variable `x` (a `list`), ones controlling the sampling pattern, ones controlling the tuning of the parameter proposal schemes and others specifying the prior distributions of the parameters. 
+The function accepts arguments including `logical` response variable `y`, ontologically encoded predictor variable `x`, and additional arguments for tuning the compromise between execution speed and precision for the procedure. 
 
-It returns a list of traces for the sampled parameters as an object of class `sim_reg_samples` (typically, this requires a lot of memory, and hence it may be preferable to store a summarised version by passing it to `summary`). Of particular interest is the estimated probability of association - i.e. the posterior mean value of `gamma` - the model selection indicator. This can be obtained by calling the function `P(gamma=1)` on the returned object (or on the summarised object). Also, the posterior distribution of the characteristic ontological profile `phi` may be of interest.
+It returns an object of class `sim_reg_output`, which contains the pertinent information about the results of the inference. Of particular interest is the estimated probability of association, i.e. the probability that model selection indicator `gamma` = 1. The function `prob_association` can be used on the output to obtain such and estimate. Also, the posterior distribution of the characteristic ontological profile `phi` may be of interest, for which the function `get_term_marginals` can be used.
 
-Most of the arguments have default values, so calling of the function can be demonstrated with passing only a few. To set up an environment where we can run a simple example, we need an `ontology_index` object. The `ontologyIndex` package contains such an instance - the Human Phenotype Ontology, `hpo` - so we load the package and the data, and proceed to create an HPO profile `template` and an enclosing set of terms, `terms`, from which we'll generate random term sets upon which to apply the function. In our setting, we'll interpret this HPO profile `template` as the typical phenotype of a hypothetical disease. We set `template` to the set `HP:0005537, HP:0000729` and `HP:0001873`, corresponding to phenotype abnormalities 'Decreased mean platelet volume', 'Autistic behavior' and 'Thrombocytopenia' respectively.
+To set up an environment where we can run a simple example, we need an `ontology_index` object. The `ontologyIndex` package contains such an object - the Human Phenotype Ontology, `hpo` - so we load the package and the data, and proceed to create an HPO profile `template` and an enclosing set of terms, `terms`, from which we'll generate random term sets upon which to apply the function. In our setting, we'll interpret this HPO profile `template` as the typical phenotype of a hypothetical disease. We set `template` to the set `HP:0005537, HP:0000729` and `HP:0001873`, corresponding to phenotype abnormalities 'Decreased mean platelet volume', 'Autistic behavior' and 'Thrombocytopenia' respectively.
 
 ```{r}
 library(ontologyIndex)
@@ -48,7 +48,7 @@ Now we can call the `sim_reg` function to estimate the probability of an associa
 
 ```{r}
 no_assoc <- sim_reg(ontology=hpo, x=x, y=y)
-`P(gamma=1)`(no_assoc)
+prob_association(no_assoc)
 ```
 
 We note that there is a low probability of association. Now, we sample `x` conditional on `y`, so that if `y[i] == TRUE`, then `x` has 2 out of the 3 terms in `template` added to its profile.
@@ -65,21 +65,13 @@ head(x_assoc)
 Now we run the procedure again with the new `x` and `y` and print the mean posterior value of `gamma`.
 ```{r}
 assoc <- sim_reg(ontology=hpo, x=x_assoc, y=y)
-`P(gamma=1)`(assoc)
+prob_association(assoc)
 ```
 
-We note that we infer a higher probability of association. We can also visualise the estimated characteristic ontological profile, using the function `phi_plot`, and note that the inferred characteristic phenotype corresponds well to `template`.
+We note that we infer a higher probability of association. We can also visualise the estimated characteristic ontological profile, using the function `plot_term_marginals`, and note that the inferred characteristic phenotype corresponds well to `template`.
 
 ```{r}
-phi_plot(hpo, assoc$phi[assoc$gamma], max_terms=8, fontsize=30)
-```
-
-Note that we must subset the `$phi` slot by `$gamma`, as the characteristic ontological profile `phi` has no effect if `gamma == FALSE`. A more comprehensive summary of the output can be exported to pdf using the function `sim_reg_summary`.
-
-`summary` can also be called print out information about the inference.
-
-```{r}
-print(summary(assoc), ontology=hpo)
+plot_term_marginals(hpo, get_term_marginals(assoc), max_terms=8, fontsize=30)
 ```
 
 ## References

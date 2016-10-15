@@ -12,38 +12,35 @@ terms <- get_ancestors(hpo, c(hpo$id[match(c("Abnormality of thrombocytes","Hear
 
 ## ------------------------------------------------------------------------
 hearing_abnormality <- hpo$id[match("Hearing abnormality", hpo$name)]
-genotypes <- c(rep(TRUE, 4), rep(FALSE, 96))
+genotypes <- c(rep(TRUE, 2), rep(FALSE, 98))
 
 #give all subjects 5 random terms and add 'hearing abnormality' for those with y_i=TRUE
 phenotypes <- lapply(genotypes, function(y_i) minimal_set(hpo, c(
 if (y_i) hearing_abnormality else character(0), sample(terms, size=5))))
 
 ## ------------------------------------------------------------------------
-samples <- sim_reg(ontology=hpo, x=phenotypes, y=genotypes)
-print(summary(samples), ontology=hpo)
+sim_reg(ontology=hpo, x=phenotypes, y=genotypes)
 
 ## ------------------------------------------------------------------------
-lit_sims <- ifelse(grepl(x=hpo$name, ignore=TRUE, pattern="hearing"), 10, 1)
-names(lit_sims) <- hpo$name
+term_weights <- ifelse(grepl(x=hpo$name, ignore=TRUE, pattern="hearing"), 10, 1)
+names(term_weights) <- hpo$id
 
 ## ------------------------------------------------------------------------
 thrombocytes <- hpo$id[match("Abnormality of thrombocytes", hpo$name)]
 literature_phenotype <- c(hearing_abnormality, thrombocytes)
 info <- get_term_info_content(hpo, phenotypes)
 
-lit_sims_resnik <- apply(exp(get_term_set_to_term_sims(
+term_weights_resnik <- apply(get_term_set_to_term_sims(
 	ontology=hpo, information_content=info, terms=names(info),
-	term_sim_method="resnik", term_sets=list(literature_phenotype))), 2, mean)
+	term_sim_method="resnik", term_sets=list(literature_phenotype)), 2, mean)
 
 ## ------------------------------------------------------------------------
-with_prior_samples <- sim_reg(
+sim_reg(
 	ontology=hpo,
 	x=phenotypes,
 	y=genotypes,
-	lit_sims=lit_sims_resnik
+	term_weights=term_weights_resnik
 )
-
-print(summary(with_prior_samples), ontology=hpo)
 
 ## ----eval=FALSE----------------------------------------------------------
 #  annotation_df <- read.table(header=FALSE, skip=1, sep="\t",

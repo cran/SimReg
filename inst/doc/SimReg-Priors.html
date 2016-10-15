@@ -12,7 +12,7 @@
 
 <meta name="author" content="Daniel Greene" />
 
-<meta name="date" content="2016-08-16" />
+<meta name="date" content="2016-10-15" />
 
 <title>Prior phenotypic information</title>
 
@@ -52,12 +52,12 @@ code > span.er { color: #ff0000; font-weight: bold; }
 
 <h1 class="title toc-ignore">Prior phenotypic information</h1>
 <h4 class="author"><em>Daniel Greene</em></h4>
-<h4 class="date"><em>2016-08-16</em></h4>
+<h4 class="date"><em>2016-10-15</em></h4>
 
 
 
-<p>The <code>sim_reg</code> function uses MCMC to sample parameters from the ‘Phenotype similarity regression’ model conditional on supplied binary genotypes and ontological term sets.</p>
-<p>The vignette ‘Similarity Regression - Introduction’ shows a simple application based on simulated data. This vignette demonstrates how to include prior phenotypic information in the inference. The information is supplied to the inference procedure as a parameter called <code>lit_sims</code> and should be a numeric vector of relative weights for terms included in the sample space of <code>phi</code> (by default the set of all terms present amongst the terms in <code>x</code> and their ancestors). Terms not specified in this vector default to having a weight of 1.</p>
+<p>The <code>sim_reg</code> function performs inference under the ‘Similarity regression’ model [1] conditional on supplied binary genotypes and ontological term sets.</p>
+<p>The vignette ‘Similarity Regression - Introduction’ shows a simple application based on simulated data. This vignette demonstrates how to set the prior on <code>phi</code>, for example in order to include prior information about likely phenotype of a disease. The information is supplied to the inference procedure as a parameter called <code>term_weights</code> and should be a numeric vector of relative weights for terms included in the sample space of <code>phi</code> (by default the set of all terms present amongst the terms in <code>x</code> and their ancestors).</p>
 <pre class="sourceCode r"><code class="sourceCode r"><span class="kw">library</span>(ontologyIndex)
 <span class="kw">library</span>(ontologySimilarity)
 <span class="kw">library</span>(SimReg)
@@ -65,72 +65,65 @@ code > span.er { color: #ff0000; font-weight: bold; }
 <span class="kw">set.seed</span>(<span class="dv">1</span>)
 terms &lt;-<span class="st"> </span><span class="kw">get_ancestors</span>(hpo, <span class="kw">c</span>(hpo$id[<span class="kw">match</span>(<span class="kw">c</span>(<span class="st">&quot;Abnormality of thrombocytes&quot;</span>,<span class="st">&quot;Hearing abnormality&quot;</span>), 
     hpo$name)], <span class="kw">sample</span>(hpo$id, <span class="dt">size=</span><span class="dv">50</span>)))</code></pre>
-<p>To help illustrate the ideas, we’ll consider a scenario where there is some evidence for an association between a phenotype - which in this example we’ll set as ‘Hearing abnormality’ - and a binary genotype, and where there is also a prior expectation that the ‘characteristic phenotype’ of the genotype would involve hearing abnormality. For instance, the genotype might depend on variants in a gene orthologous to one known to harbour ‘Hearing abnormality’ variants in a model organism. We apply the inference procedure to the data with and without the prior and observe the effect on the inferred ‘probability of association’, <code>gamma</code>.</p>
+<p>To help illustrate the ideas, we’ll consider a scenario where there is some evidence for an association between a phenotype - which in this example we’ll set as ‘Hearing abnormality’ - and a binary genotype, and where there is also a prior expectation that the ‘characteristic phenotype’ of the genotype would involve hearing abnormality. For instance, the genotype might depend on variants in a gene orthologous to one known to harbour variants associated with ‘Hearing abnormality’ in a model organism. We apply the inference procedure to the data with and without the prior and observe the effect on the inferred probability of association.</p>
 <pre class="sourceCode r"><code class="sourceCode r">hearing_abnormality &lt;-<span class="st"> </span>hpo$id[<span class="kw">match</span>(<span class="st">&quot;Hearing abnormality&quot;</span>, hpo$name)]
-genotypes &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="ot">TRUE</span>, <span class="dv">4</span>), <span class="kw">rep</span>(<span class="ot">FALSE</span>, <span class="dv">96</span>))
+genotypes &lt;-<span class="st"> </span><span class="kw">c</span>(<span class="kw">rep</span>(<span class="ot">TRUE</span>, <span class="dv">2</span>), <span class="kw">rep</span>(<span class="ot">FALSE</span>, <span class="dv">98</span>))
 
 <span class="co">#give all subjects 5 random terms and add 'hearing abnormality' for those with y_i=TRUE</span>
 phenotypes &lt;-<span class="st"> </span><span class="kw">lapply</span>(genotypes, function(y_i) <span class="kw">minimal_set</span>(hpo, <span class="kw">c</span>(
 if (y_i) hearing_abnormality else <span class="kw">character</span>(<span class="dv">0</span>), <span class="kw">sample</span>(terms, <span class="dt">size=</span><span class="dv">5</span>))))</code></pre>
 <p>So there are three cases with the rare variant (i.e. having y_i = TRUE) and all of them have the ‘Hearing abnormality’ HPO term.</p>
 <p>An application of yields:</p>
-<pre class="sourceCode r"><code class="sourceCode r">samples &lt;-<span class="st"> </span><span class="kw">sim_reg</span>(<span class="dt">ontology=</span>hpo, <span class="dt">x=</span>phenotypes, <span class="dt">y=</span>genotypes)
-<span class="kw">print</span>(<span class="kw">summary</span>(samples), <span class="dt">ontology=</span>hpo)</code></pre>
-<pre><code>## --------------------------------------------------------------------------- 
-## P(gamma=1|y) =  0.339 
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">sim_reg</span>(<span class="dt">ontology=</span>hpo, <span class="dt">x=</span>phenotypes, <span class="dt">y=</span>genotypes)</code></pre>
+<pre><code>## Probability of association:  0.47 
 ## --------------------------------------------------------------------------- 
-## Phi:
-##           t                                         Name    P
-##  HP:0000364                          Hearing abnormality 0.59
-##  HP:0000598                       Abnormality of the ear 0.33
-##  HP:0011277 Abnormality of the urinary system physiology 0.13
-##  HP:0003110             Abnormality of urine homeostasis 0.09
-##  HP:0000079            Abnormality of the urinary system 0.09
-##  HP:0010343            Aplasia/Hypoplasia of the 5th toe 0.06
-##  HP:0001939        Abnormality of metabolism/homeostasis 0.06
-##  HP:0040064                         Abnormality of limbs 0.05
-##  HP:0003040                                  Arthropathy 0.05
-##  HP:0002813          Abnormality of limb bone morphology 0.05
+##                                                   Name    p
+##                                    Hearing abnormality 0.63
+##                                 Abnormality of the ear 0.37
+##                                   Abnormality of digit 0.03
+##                                   Abnormality of limbs 0.03
+##                    Abnormality of limb bone morphology 0.03
+##                          Abnormality of the upper limb 0.02
+##                               Abnormality of limb bone 0.02
+##               Abnormality of the phalanges of the toes 0.02
+##                                     Abnormality of toe 0.02
+##  Aplasia/hypoplasia involving bones of the extremities 0.02
 ## ---------------------------------------------------------------------------</code></pre>
-<p>We now consider constructing the <code>lit_sims</code> parameter to capture our knowledge about the gene from the model organism. We can either explicitly create the <code>lit_sims</code> vector of prior weights, i.e. by assigning higher weights to terms which involve some kind of hearing problem. For example, we could set the prior weight of all terms which have the word ‘hearing’ in to ten times that of terms which don’t.</p>
-<pre class="sourceCode r"><code class="sourceCode r">lit_sims &lt;-<span class="st"> </span><span class="kw">ifelse</span>(<span class="kw">grepl</span>(<span class="dt">x=</span>hpo$name, <span class="dt">ignore=</span><span class="ot">TRUE</span>, <span class="dt">pattern=</span><span class="st">&quot;hearing&quot;</span>), <span class="dv">10</span>, <span class="dv">1</span>)
-<span class="kw">names</span>(lit_sims) &lt;-<span class="st"> </span>hpo$name</code></pre>
-<p>Note: one must set the <code>names</code> of the <code>lit_sims</code> vector, as <code>sim_reg</code> will use it.</p>
-<p>If the prior knowledge of the phenotype/phenotype of the model organism has been ontologically encoded (for example, it may be available as MPO terms from the Mouse Genome Informatics (MGI) website, <a href="http://www.informatics.jax.org/">http://www.informatics.jax.org/</a>, [1]), another option is to use a phenotypic similarity function to obtain the numeric vector of weights for inclusion of terms in <code>phi</code> [2]. This may be more convenient, particularly when dealing with large numbers of genes. In the SimReg paper [2], the vector is set by exponentiating the Resnik-based [3] similarities of terms to the terms in the ‘literature phenotype’. In order to calculate the similarities based on Resnik’s similarity measure, we must first compute an ‘information content’ for the terms, equal to the negative log frequency. The frequencies can be calculated with respect to different collections of phenotypes. Here, we will calculate it with respect to the frequencies of terms within our collection, <code>phenotypes</code>, by calling the function exported by the <code>ontologyIndex</code> package, <code>get_term_info_content</code>. Note, it could also be calculated with respect to the frequency of the term amongst the ontological annotation of OMIM diseases (available from the HPO website, <a href="http://human-phenotype-ontology.github.io">http://human-phenotype-ontology.github.io</a> [4]). The function <code>get_term_set_to_term_sims</code> in the package <code>ontologySimilarity</code> can then be used to calculate the similarities between the terms in the sample space of <code>phi</code> and the <code>literature_phenotype</code>. It calculates a matrix of similarities between the individual terms in the literature phenotype and terms in the sample space. Let’s say the phenotype of the model organism in our example contains abnormalities of the thrombocytes and hearing abnormality.</p>
+<p>We now consider constructing the <code>term_weights</code> parameter to capture our knowledge about the gene from the model organism. We can either explicitly create the <code>term_weights</code> vector of prior weights, i.e. by assigning higher weights to terms which involve some kind of hearing problem. For example, we could set the prior weight of all terms which have the word ‘hearing’ in to ten times that of terms which don’t.</p>
+<pre class="sourceCode r"><code class="sourceCode r">term_weights &lt;-<span class="st"> </span><span class="kw">ifelse</span>(<span class="kw">grepl</span>(<span class="dt">x=</span>hpo$name, <span class="dt">ignore=</span><span class="ot">TRUE</span>, <span class="dt">pattern=</span><span class="st">&quot;hearing&quot;</span>), <span class="dv">10</span>, <span class="dv">1</span>)
+<span class="kw">names</span>(term_weights) &lt;-<span class="st"> </span>hpo$id</code></pre>
+<p>Note: one must set the <code>names</code> of the <code>term_weights</code> vector, as <code>sim_reg</code> will use it.</p>
+<p>If the prior knowledge of the phenotype/phenotype of the model organism has been ontologically encoded (for example, it may be available as MPO terms from the Mouse Genome Informatics (MGI) website, <a href="http://www.informatics.jax.org/">http://www.informatics.jax.org/</a>, [2]), another option is to use a phenotypic similarity function to obtain the numeric vector of weights for inclusion of terms in <code>phi</code> [1]. This may be more convenient, particularly when dealing with large numbers of genes. In the SimReg paper [1], the vector is set using the Resnik-based [3] similarities of terms to the terms in the ‘literature phenotype’. In order to calculate the similarities based on Resnik’s similarity measure, we must first compute an ‘information content’ for the terms, equal to the negative log frequency. The frequencies can be calculated with respect to different collections of phenotypes. Here, we will calculate it with respect to the frequencies of terms within our collection, <code>phenotypes</code>, by calling the function exported by the <code>ontologyIndex</code> package, <code>get_term_info_content</code>. Note, it could also be calculated with respect to the frequency of the term amongst the ontological annotation of OMIM diseases (available from the HPO website, <a href="http://human-phenotype-ontology.github.io">http://human-phenotype-ontology.github.io</a> [4]). The function <code>get_term_set_to_term_sims</code> in the package <code>ontologySimilarity</code> can then be used to calculate the similarities between the terms in the sample space of <code>phi</code> and the <code>literature_phenotype</code>. It calculates a matrix of similarities between the individual terms in the literature phenotype and terms in the sample space. Let’s say the phenotype of the model organism in our example contains abnormalities of the thrombocytes and hearing abnormality.</p>
 <pre class="sourceCode r"><code class="sourceCode r">thrombocytes &lt;-<span class="st"> </span>hpo$id[<span class="kw">match</span>(<span class="st">&quot;Abnormality of thrombocytes&quot;</span>, hpo$name)]
 literature_phenotype &lt;-<span class="st"> </span><span class="kw">c</span>(hearing_abnormality, thrombocytes)
 info &lt;-<span class="st"> </span><span class="kw">get_term_info_content</span>(hpo, phenotypes)
 
-lit_sims_resnik &lt;-<span class="st"> </span><span class="kw">apply</span>(<span class="kw">exp</span>(<span class="kw">get_term_set_to_term_sims</span>(
+term_weights_resnik &lt;-<span class="st"> </span><span class="kw">apply</span>(<span class="kw">get_term_set_to_term_sims</span>(
     <span class="dt">ontology=</span>hpo, <span class="dt">information_content=</span>info, <span class="dt">terms=</span><span class="kw">names</span>(info),
-    <span class="dt">term_sim_method=</span><span class="st">&quot;resnik&quot;</span>, <span class="dt">term_sets=</span><span class="kw">list</span>(literature_phenotype))), <span class="dv">2</span>, mean)</code></pre>
-<p>This can then be passed to <code>sim_reg</code> through the <code>lit_sims</code> parameter.</p>
-<pre class="sourceCode r"><code class="sourceCode r">with_prior_samples &lt;-<span class="st"> </span><span class="kw">sim_reg</span>(
+    <span class="dt">term_sim_method=</span><span class="st">&quot;resnik&quot;</span>, <span class="dt">term_sets=</span><span class="kw">list</span>(literature_phenotype)), <span class="dv">2</span>, mean)</code></pre>
+<p>This can then be passed to <code>sim_reg</code> through the <code>term_weights</code> parameter.</p>
+<pre class="sourceCode r"><code class="sourceCode r"><span class="kw">sim_reg</span>(
     <span class="dt">ontology=</span>hpo,
     <span class="dt">x=</span>phenotypes,
     <span class="dt">y=</span>genotypes,
-    <span class="dt">lit_sims=</span>lit_sims_resnik
-)
-
-<span class="kw">print</span>(<span class="kw">summary</span>(with_prior_samples), <span class="dt">ontology=</span>hpo)</code></pre>
-<pre><code>## --------------------------------------------------------------------------- 
-## P(gamma=1|y) =  0.6375 
+    <span class="dt">term_weights=</span>term_weights_resnik
+)</code></pre>
+<pre><code>## Probability of association:  0.8 
 ## --------------------------------------------------------------------------- 
-## Phi:
-##           t                                         Name    P
-##  HP:0000364                          Hearing abnormality 0.66
-##  HP:0000598                       Abnormality of the ear 0.32
-##  HP:0011277 Abnormality of the urinary system physiology 0.13
-##  HP:0003110             Abnormality of urine homeostasis 0.09
-##  HP:0000079            Abnormality of the urinary system 0.09
-##  HP:0040064                         Abnormality of limbs 0.09
-##  HP:0002813          Abnormality of limb bone morphology 0.09
-##  HP:0000346                         Whistling appearance 0.07
-##  HP:0006768                      Localized neuroblastoma 0.06
-##  HP:0001939        Abnormality of metabolism/homeostasis 0.05
+##                                                   Name    p
+##                                    Hearing abnormality 0.67
+##                                 Abnormality of the ear 0.33
+##                                   Abnormality of digit 0.02
+##                                   Abnormality of limbs 0.01
+##                    Abnormality of limb bone morphology 0.01
+##               Abnormality of the phalanges of the toes 0.01
+##                               Abnormality of limb bone 0.01
+##                          Abnormality of the upper limb 0.01
+##                                     Abnormality of toe 0.01
+##  Aplasia/hypoplasia involving bones of the extremities 0.01
 ## ---------------------------------------------------------------------------</code></pre>
-<p>Note that including the <code>lit_sims</code> parameter has increased the mean posterior value of <code>gamma</code>.</p>
-<p>Often the binary genotype relates to a particular gene, and for many genes ontologically encoded phenotypes are available either in the form of HPO encoded OMIM annotations [4] or MPO annotations [1]. For a given set of subjects with HPO-coded phenotypes, it may be useful to apply the inference gene-by-gene, taking the binary genotype <code>y</code> to indicate the presence of a rare variant in each particular gene for each case. Thus, we may wish to systematically create informative prior distributions for <code>phi</code> for all genes. This can be done by downloading the file called ‘ALL_SOURCES_TYPICAL_FEATURES_genes_to_phenotype.txt’ from the HPO website, and running the following code yielding a list of term sets (i.e. character vectors of HPO term IDs).</p>
+<p>Note that including the <code>term_weights</code> parameter has increased the mean posterior value of <code>gamma</code>.</p>
+<p>Often the binary genotype relates to a particular gene, and for many genes ontologically encoded phenotypes are available either in the form of HPO encoded OMIM annotations [4] or MPO annotations [2]. For a given set of subjects with HPO-coded phenotypes, it may be useful to apply the inference gene-by-gene, taking the binary genotype <code>y</code> to indicate the presence of a rare variant in each particular gene for each case. Thus, we may wish to systematically create informative prior distributions for <code>phi</code> for all genes. This can be done by downloading the file called ‘ALL_SOURCES_TYPICAL_FEATURES_genes_to_phenotype.txt’ from the HPO website, and running the following code yielding a list of term sets (i.e. character vectors of HPO term IDs).</p>
 <pre class="sourceCode r"><code class="sourceCode r">annotation_df &lt;-<span class="st"> </span><span class="kw">read.table</span>(<span class="dt">header=</span><span class="ot">FALSE</span>, <span class="dt">skip=</span><span class="dv">1</span>, <span class="dt">sep=</span><span class="st">&quot;</span><span class="ch">\t</span><span class="st">&quot;</span>, 
     <span class="dt">file=</span><span class="st">&quot;ALL_SOURCES_TYPICAL_FEATURES_genes_to_phenotype.txt&quot;</span>, <span class="dt">stringsAsFactors=</span><span class="ot">FALSE</span>, <span class="dt">quote=</span><span class="st">&quot;&quot;</span>)
 hpo_by_gene &lt;-<span class="st"> </span><span class="kw">lapply</span>(<span class="kw">split</span>(<span class="dt">f=</span>annotation_df[,<span class="dv">2</span>], <span class="dt">x=</span>annotation_df[,<span class="dv">4</span>]), 
@@ -138,8 +131,8 @@ hpo_by_gene &lt;-<span class="st"> </span><span class="kw">lapply</span>(<span c
 <div id="references" class="section level2">
 <h2>References</h2>
 <ol style="list-style-type: decimal">
-<li>Eppig JT, Blake JA, Bult CJ, Kadin JA, Richardson JE;; The Mouse Genome Database Group. 2015. The Mouse Genome Database (MGD): facilitating mouse as a model for human biology and disease. Nucleic Acids Res. 2015 Jan 28;43(Database issue):D726-36.</li>
 <li>D. Greene, NIHR BioResource, S. Richardson, E. Turro, Phenotype similarity regression for identifying the genetic determinants of rare diseases, The American Journal of Human Genetics 98, 1-10, March 3, 2016.</li>
+<li>Eppig JT, Blake JA, Bult CJ, Kadin JA, Richardson JE;; The Mouse Genome Database Group. 2015. The Mouse Genome Database (MGD): facilitating mouse as a model for human biology and disease. Nucleic Acids Res. 2015 Jan 28;43(Database issue):D726-36.</li>
 <li>Philip Resnik (1995). Chris S. Mellish (Ed.), ed. Using information content to evaluate semantic similarity in a taxonomy. Proceedings of the 14th international joint conference on Artificial intelligence (IJCAI’95) (Morgan Kaufmann Publishers Inc., San Francisco, CA, USA) 1: 448-453.</li>
 <li>Sebastian Kohler, Sandra C Doelken, Christopher J. Mungall, Sebastian Bauer, Helen V. Firth, et al. The Human Phenotype Ontology project: linking molecular biology and disease through phenotype data Nucl. Acids Res. (1 January 2014) 42 (D1): D966-D974</li>
 </ol>
