@@ -4,14 +4,26 @@
 \alias{sim_reg}
 \title{Similarity regression}
 \usage{
-sim_reg(ontology, x, y, information_content = get_term_info_content(ontology,
-  x), sim_params = list(ontology = ontology, information_content =
-  information_content), using_terms = get_terms(sim_params),
+sim_reg(
+  ontology,
+  x,
+  y,
+  information_content = get_term_info_content(ontology, x),
+  sim_params = list(ontology = ontology, information_content = information_content),
+  using_terms = get_terms(sim_params),
   term_weights = rep(0, length(using_terms)),
-  prior = discrete_gamma(using_terms), min_BF = -Inf, max_select = 2000L,
-  max_phi_count = 200L, two_way = TRUE, selection_fn = fg_step,
-  lik_method = NULL, lik_method_args = list(), gamma0_ml = bg_rate,
-  min_ratio = 1e-04, ...)
+  prior = discrete_gamma(using_terms),
+  min_BF = -Inf,
+  max_select = 2000L,
+  max_phi_count = 200L,
+  two_way = TRUE,
+  selection_fn = fg_step_tab(N = length(y)),
+  lik_method = NULL,
+  lik_method_args = list(),
+  gamma0_ml = bg_rate,
+  min_ratio = 1e-04,
+  ...
+)
 }
 \arguments{
 \item{ontology}{\code{ontology_index} object.}
@@ -67,4 +79,3 @@ hpo, if (!.y) sample(all_terms, size=3) else
 sim_reg_out <- sim_reg(ontology=hpo, x=x, y=y)
 }
 }
-

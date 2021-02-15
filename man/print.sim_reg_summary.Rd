@@ -14,4 +14,3 @@
 \description{
 Print \code{sim_reg_summary} object
 }
-

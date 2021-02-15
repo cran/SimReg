@@ -17,4 +17,3 @@ Numeric value.
 \description{
 Calculate probability of association between \code{y} and \code{x}
 }
-

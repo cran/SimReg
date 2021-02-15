@@ -66,5 +66,5 @@ get_phi_roots <- function(
 	den <- as.dendrogram(hclust(as.dist(1-grid), method="complete"))
 	clusts <- stack_dendro(den)
 	dl <- dendroterms_list(dendroterms(den, w_ancs))
-	unique_term_sets(lapply(dl[sapply(clusts, length) >= min_intersect], minimal_set, ontology=ontology))
+	unique_term_sets(lapply(dl[sapply(dl, length) > 0 & sapply(clusts, length) >= min_intersect], minimal_set, ontology=ontology))
 }

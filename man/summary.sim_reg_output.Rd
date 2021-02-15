@@ -16,4 +16,3 @@
 \description{
 Get summary of \code{sim_reg_output} object
 }
-

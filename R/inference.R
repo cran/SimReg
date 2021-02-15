@@ -14,18 +14,17 @@ get_terms <- function(args) {
 #' Performs Bayesian `similarity regression' on given \code{logical} response vector \code{y} against \code{list} of ontological term sets \code{x}. It returns an object of class \code{sim_reg_output}. Of particular interest are the probability of an association, which can be calculated with \code{\link{prob_association}}, and the characteristic ontological profile phi, which can be visualised using the functions \code{\link{plot_term_marginals}}, and \code{\link{term_marginals}}). The results can be summarised with \code{summary}.
 #'
 #' @template ontology
-#' @param x \code{list} of \code{character} vectors of ontological terms.
-#' @param y \code{logical} response vector.
-#' @export
-#' @param information_content Numeric vector of information contents of terms named by term ID. Defaults to information content based on frequencies of annotation in \code{x}.
-#' @param sim_params List of arguments to pass to \code{get_asym_sim_grid}.
+#' @template x
+#' @template y
+#' @template information_content
+#' @template sim_params
 #' @param using_terms Character vector of term IDs giving the complete set of terms to include in the the \code{phi} parameter space.
 #' @param term_weights Numeric vector of prior weights for individual terms.
 #' @param prior Function for computing the unweighted prior probability of a \code{phi} value.
 #' @param min_BF Bayes factor threshold below which to terminate computation, enabling faster execution time at the expense of accuracy and precision.
 #' @param max_select Upper bound for number of \code{phi} values to sample.
 #' @param max_phi_count Upper bound for number of \code{phi} values to include in final likelihood sum.
-#' @param two_way Boolean value determining whether to calculate semantic similarity `in both directions' (i.e. compute \code{s_x} and \code{s_phi} or just \code{s_phi}).
+#' @template two_way
 #' @param selection_fn Function for selecting values of \code{phi} with high posterior mass.
 #' @param lik_method Function for calculating marginal likelihood contional on values of \code{phi}.
 #' @param lik_method_args List of additional arguments to pass to \code{lik_method}.
@@ -34,6 +33,7 @@ get_terms <- function(args) {
 #' @param ... Additional arguments to pass to \code{selection_fn}.
 #' @importFrom ontologyIndex get_ancestors get_term_info_content
 #' @importFrom ontologySimilarity get_asym_sim_grid
+#' @export
 #' @examples
 #' \dontrun{
 #' set.seed(0)
@@ -60,7 +60,7 @@ sim_reg <- function(
 	max_select=2000L,
 	max_phi_count=200L,
 	two_way=TRUE,
-	selection_fn=fg_step,
+	selection_fn=fg_step_tab(N=length(y)),
 	lik_method=NULL,
 	lik_method_args=list(),
 	gamma0_ml=bg_rate,
@@ -75,12 +75,12 @@ sim_reg <- function(
 		term_weights[using_terms]
 	} else {
 		stopifnot(length(using_terms) == length(term_weights))
-		term_weights
+		setNames(nm=using_terms, term_weights)
 	}
 
 	bgml <- gamma0_ml(y)
 
-	phi_roots <- Filter(f=function(x) length(x) > 0, x=get_phi_roots(ontology, information_content=information_content, min_intersect=1L, term_sets=x[y]))
+	phi_roots <- Filter(f=function(x) length(x) > 0, x=if (sum(y) > 1) get_phi_roots(ontology, information_content=information_content, min_intersect=1L, term_sets=x[y]) else unname(x[y]))
 
 	f_priors <- function(phis) if (length(phis) == 0) numeric(0) else { sapply(phis, prior) + sapply(phis, function(phi) mean(prior_weights[match(phi, using_terms)])-mean(prior_weights)) }
 
@@ -122,6 +122,7 @@ sim_reg <- function(
 	mls <- ml(phi_roots)
 
 	best_root <- phi_roots[[which.max(mls)]]
+	#best_root <- phi_roots[[which.max(mls+priors)]]
 
 	ont_roots <- ontology$id[!ontology$obsolete & sapply(ontology$parents, length) == 0]
 	core_phis <- c(unname(as.list(ont_roots)), Filter(f=Negate(is.null), x=(function(terms_in, terms_out) {
@@ -230,7 +231,7 @@ prob_association <- function(..., prior=0.05) {
 
 #' Calculate marginal probability of terms inclusion in \code{phi} from \code{sim_reg_out} object
 #' 
-#' @param sim_reg_out Object of class \code{sim_reg_output}.
+#' @template sim_reg_out
 #' @return Numeric vector of probabilities, named by term ID.
 #' @export
 get_term_marginals <- function(sim_reg_out) {

@@ -9,7 +9,7 @@ vignette: >
   %\usepackage[utf8]{inputenc}
 ---
 ```{r echo=FALSE}
-knitr::opts_chunk$set(dev="svg", fig.width=7, fig.height=7)
+knitr::opts_chunk$set(fig.width=7, fig.height=7)
 ```
 
 The `sim_reg` function performs inference under the 'Similarity regression' model [1] conditional on supplied binary genotypes and ontological term sets.  

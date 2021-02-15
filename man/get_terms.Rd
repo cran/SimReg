@@ -15,4 +15,3 @@ Character vector of term IDs.
 \description{
 Get full set of terms to use in inference procedure based on similarity function arguments
 }
-

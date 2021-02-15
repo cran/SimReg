@@ -15,4 +15,3 @@ Numeric value on log scale.
 \description{
 Calculate sum of log probabilities on log scale without over/under-flow
 }
-

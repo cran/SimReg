@@ -23,4 +23,3 @@ Numeric value.
 \description{
 Calculate log Bayes factor for similarity the model, \code{gamma=1} and baseline model, \code{gamma=0}.
 }
-

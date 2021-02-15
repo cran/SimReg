@@ -15,4 +15,3 @@ Numeric vector of probabilities, named by term ID.
 \description{
 Calculate marginal probability of terms inclusion in \code{phi}
 }
-

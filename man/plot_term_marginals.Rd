@@ -4,8 +4,13 @@
 \alias{plot_term_marginals}
 \title{Create ontological plot of marginal probabilities of terms}
 \usage{
-plot_term_marginals(ontology, term_marginals, max_terms = 10,
-  min_probability = 0.01, ...)
+plot_term_marginals(
+  ontology,
+  term_marginals,
+  max_terms = 10,
+  min_probability = 0.01,
+  ...
+)
 }
 \arguments{
 \item{ontology}{\code{ontology_index} object.}
@@ -21,4 +26,3 @@ plot_term_marginals(ontology, term_marginals, max_terms = 10,
 \description{
 Create ontological plot of marginal probabilities of terms
 }
-
