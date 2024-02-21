@@ -5,6 +5,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // bg_ML
 double bg_ML(int y0, int y1, NumericVector t, int n_samples, double alpha_mean, double alpha_sd, double alpha_prop_sd);
 RcppExport SEXP _SimReg_bg_ML(SEXP y0SEXP, SEXP y1SEXP, SEXP tSEXP, SEXP n_samplesSEXP, SEXP alpha_meanSEXP, SEXP alpha_sdSEXP, SEXP alpha_prop_sdSEXP) {

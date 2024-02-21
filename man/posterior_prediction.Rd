@@ -13,7 +13,7 @@ posterior_prediction(
   information_content = get_term_info_content(ontology, x),
   sim_params = list(ontology = ontology, information_content = information_content),
   two_way = TRUE,
-  prediction_fn = SimReg:::fg_step_tab_pp(N = length(y)),
+  prediction_fn = NULL,
   min_ratio = 0.001,
   ...
 )

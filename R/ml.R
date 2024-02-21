@@ -222,6 +222,7 @@ f_step <- function(
 	sum_log_probs(liks)
 }
 
+#' @importFrom Rcpp evalCpp
 #' @useDynLib SimReg 
 fg <- function(
 	s_phi, 

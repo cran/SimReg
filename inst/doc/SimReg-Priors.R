@@ -6,9 +6,16 @@ library(ontologyIndex)
 library(ontologySimilarity)
 library(SimReg)
 data(hpo)
+
+# only use terms which are descended from HP:0000001
+pa_descs <- intersection_with_descendants(hpo, "HP:0000001", hpo$id)
+hpo <- lapply(hpo, "[", pa_descs)
+class(hpo) <- "ontology_index"
+
 set.seed(1)
+
 terms <- get_ancestors(hpo, c(hpo$id[match(c("Abnormality of thrombocytes","Hearing abnormality"), 
-	hpo$name)], sample(hpo$id, size=50)))
+   hpo$name)], intersection_with_descendants(hpo, "HP:0000118", sample(hpo$id[!hpo$obsolete], size=50))))
 
 ## -----------------------------------------------------------------------------
 hearing_abnormality <- hpo$id[match("Hearing abnormality", hpo$name)]

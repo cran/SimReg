@@ -21,9 +21,16 @@ library(ontologyIndex)
 library(ontologySimilarity)
 library(SimReg)
 data(hpo)
+
+# only use terms which are descended from HP:0000001
+pa_descs <- intersection_with_descendants(hpo, "HP:0000001", hpo$id)
+hpo <- lapply(hpo, "[", pa_descs)
+class(hpo) <- "ontology_index"
+
 set.seed(1)
+
 terms <- get_ancestors(hpo, c(hpo$id[match(c("Abnormality of thrombocytes","Hearing abnormality"), 
-	hpo$name)], sample(hpo$id, size=50)))
+   hpo$name)], intersection_with_descendants(hpo, "HP:0000118", sample(hpo$id[!hpo$obsolete], size=50))))
 ```
 
 To help illustrate the ideas, we'll consider a scenario where there is some evidence for an association between a phenotype - which in this example we'll set as 'Hearing abnormality' - and a binary genotype, and where there is also a prior expectation that the 'characteristic phenotype' of the genotype would involve hearing abnormality. For instance, the genotype might depend on variants in a gene orthologous to one known to harbour variants associated with 'Hearing abnormality' in a model organism. We apply the inference procedure to the data with and without the prior and observe the effect on the inferred probability of association.
@@ -54,7 +61,7 @@ names(term_weights) <- hpo$id
 
 Note: one must set the `names` of the `term_weights` vector, as `sim_reg` will use it.
 
-If the prior knowledge of the phenotype/phenotype of the model organism has been ontologically encoded (for example, it may be available as MPO terms from the Mouse Genome Informatics (MGI) website, http://www.informatics.jax.org/, [2]), another option is to use a phenotypic similarity function to obtain the numeric vector of weights for inclusion of terms in `phi` [1]. This may be more convenient, particularly when dealing with large numbers of genes. In the SimReg paper [1], the vector is set using the Resnik-based [3] similarities of terms to the terms in the 'literature phenotype'. In order to calculate the similarities based on Resnik's similarity measure, we must first compute an 'information content' for the terms, equal to the negative log frequency. The frequencies can be calculated with respect to different collections of phenotypes. Here, we will calculate it with respect to the frequencies of terms within our collection, `phenotypes`, by calling the function exported by the `ontologyIndex` package, `get_term_info_content`. Note, it could also be calculated with respect to the frequency of the term amongst the ontological annotation of OMIM diseases (available from the HPO website, http://human-phenotype-ontology.github.io [4]). The function `get_term_set_to_term_sims` in the package `ontologySimilarity` can then be used to calculate the similarities between the terms in the sample space of `phi` and the `literature_phenotype`. It calculates a matrix of similarities between the individual terms in the literature phenotype and terms in the sample space. Let's say the phenotype of the model organism in our example contains abnormalities of the thrombocytes and hearing abnormality.
+If the prior knowledge of the phenotype/phenotype of the model organism has been ontologically encoded (for example, it may be available as MPO terms from the Mouse Genome Informatics (MGI) website, https://www.informatics.jax.org/, [2]), another option is to use a phenotypic similarity function to obtain the numeric vector of weights for inclusion of terms in `phi` [1]. This may be more convenient, particularly when dealing with large numbers of genes. In the SimReg paper [1], the vector is set using the Resnik-based [3] similarities of terms to the terms in the 'literature phenotype'. In order to calculate the similarities based on Resnik's similarity measure, we must first compute an 'information content' for the terms, equal to the negative log frequency. The frequencies can be calculated with respect to different collections of phenotypes. Here, we will calculate it with respect to the frequencies of terms within our collection, `phenotypes`, by calling the function exported by the `ontologyIndex` package, `get_term_info_content`. Note, it could also be calculated with respect to the frequency of the term amongst the ontological annotation of OMIM diseases (available from the HPO website, http://human-phenotype-ontology.github.io [4]). The function `get_term_set_to_term_sims` in the package `ontologySimilarity` can then be used to calculate the similarities between the terms in the sample space of `phi` and the `literature_phenotype`. It calculates a matrix of similarities between the individual terms in the literature phenotype and terms in the sample space. Let's say the phenotype of the model organism in our example contains abnormalities of the thrombocytes and hearing abnormality.
 
 ```{r}
 thrombocytes <- hpo$id[match("Abnormality of thrombocytes", hpo$name)]

@@ -34,19 +34,6 @@ get_terms <- function(args) {
 #' @importFrom ontologyIndex get_ancestors get_term_info_content
 #' @importFrom ontologySimilarity get_asym_sim_grid
 #' @export
-#' @examples
-#' \dontrun{
-#' set.seed(0)
-#' data(hpo)
-#' disease_terms <- c("HP:0005537", "HP:0000729", "HP:0001873")
-#' all_terms <- get_ancestors(hpo, 
-#'	c(disease_terms, sample(hpo$id, size=50)))
-#' y <- c(rep(FALSE, 96), rep(TRUE, 3))
-#' x <- lapply(y, function(.y) minimal_set(
-#'	hpo, if (!.y) sample(all_terms, size=3) else 
-#'		c(sample(all_terms, size=1), disease_terms[runif(n=3) < 0.8])))
-#' sim_reg_out <- sim_reg(ontology=hpo, x=x, y=y)
-#' }
 sim_reg <- function(
 	ontology,
 	x,

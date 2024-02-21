@@ -5,6 +5,12 @@ knitr::opts_chunk$set(fig.width=7, fig.height=7)
 library(ontologyIndex)
 library(SimReg)
 data(hpo)
+
+# only use terms which are descended from HP:0000001
+pa_descs <- intersection_with_descendants(hpo, "HP:0000001", hpo$id)
+hpo <- lapply(hpo, "[", pa_descs)
+class(hpo) <- "ontology_index"
+
 set.seed(1)
 
 template <- c("HP:0005537", "HP:0000729", "HP:0001873")

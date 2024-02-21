@@ -1,6 +1,6 @@
-\name{SimReg3-package}
-\alias{SimReg3-package}
-\alias{SimReg3}
+\name{SimReg-package}
+\alias{SimReg-package}
+\alias{SimReg}
 \docType{package}
 \title{
 Similarity Regression Functions

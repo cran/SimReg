@@ -148,11 +148,12 @@ posterior_prediction <- function(
 	information_content=get_term_info_content(ontology, x),
 	sim_params=list(ontology=ontology, information_content=information_content),
 	two_way=TRUE,
-	prediction_fn=SimReg:::fg_step_tab_pp(N=length(y)),
+	prediction_fn=NULL,
 	min_ratio=1e-3,
 	...
 ) {
 	use_phis <- which(sim_reg_out$ml >= max(sim_reg_out$ml) + log(min_ratio))
+	if (is.null(prediction_fn)) prediction_fn <- fg_step_tab_pp(N=length(y))
 	
 	mls <- exp(sim_reg_out$ml[use_phis])
 	phis <- sim_reg_out$phis[use_phis]
